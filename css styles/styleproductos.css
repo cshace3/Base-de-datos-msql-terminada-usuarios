@@ -1,0 +1,115 @@
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    background: linear-gradient(to right, #7e7d81, #757373);
+    text-align: center;
+    margin: 0;
+    padding: 20px;
+}
+
+input,
+button {
+    width: 90%;
+    padding: 10px;
+    margin: 8px 0;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    font-size: 14px;
+}
+
+input:focus {
+    border-color: lime;
+    outline: none;
+    box-shadow: 0px 0px 5px rgba(red, green, blue, alpha)
+}
+
+.contenedor {
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 12px;
+    width: 320px;
+    margin: 30px auto;
+    box-shadow: 0px 4px 15px rgb(0, 0, 0);
+    transition: transform 0.2s;
+}
+
+.contenedor:hover {
+    transform: scale(1.02);
+}
+
+.buscador {
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 12px;
+    width: 320px;
+    margin: 30px auto;
+    box-shadow: 0px 4px 15px rgb(0, 0, 0);
+    transition: transform 0.2s;
+}
+
+.buscador:hover {
+    transform: scale(1.02);
+}
+
+
+
+button {
+    background-color: chartreuse;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.3s;
+}
+
+button:hover {
+    background-color: springgreen;
+}
+
+nav {
+
+    width: 50px;
+    height: 50px;
+}
+
+.loger {
+    padding: 10px;
+    background-color: #ffff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 1);
+}
+
+h1 {
+    text-align: center;
+}
+
+
+
+
+.imagen-1 {
+
+    width: 200px;
+    height: 200px;
+
+}
+
+.imagen-2 {
+
+    width: 200px;
+    height: 200px;
+
+}
+
+
+
+
+footer {
+    text-align: center;
+}
+
+
+
+
+
+
+
+
+/*Mensajes*/

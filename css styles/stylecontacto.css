@@ -1,0 +1,21 @@
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  background: linear-gradient(to right, #3701f7, #ffffff);
+  text-align: center;
+  margin: 0;
+  padding: 20px;
+}
+
+.contenedor {
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 12px;
+  width: 320px;
+  margin: 30px auto;
+  box-shadow: 0px 4px 15px rgb(0, 0, 0);
+  transition: transform 0.2s;
+}
+
+.contenedor:hover {
+  transform: scale(1.02);
+}
