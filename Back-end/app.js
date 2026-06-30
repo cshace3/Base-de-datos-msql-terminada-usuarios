@@ -82,6 +82,22 @@ app.post("/login", (req, res) => {
     });
 
 });
+app.get("/usuarios", (req, res) => {
+
+    const sql = "SELECT * FROM usuarios";
+
+    conexion.query(sql, (err, resultado) => {
+
+        if (err) {
+            console.log(err);
+            return res.json({ ok: false });
+        }
+
+        res.json(resultado);
+
+    });
+
+});
 
 app.listen(port, () => {
     console.log(`Servidor en http://localhost:${port}`);
