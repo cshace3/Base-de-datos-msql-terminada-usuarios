@@ -23,12 +23,22 @@ conexion.connect((err) => {
 app.use("/css", express.static(path.join(__dirname, "../css styles")));
 app.use("/js", express.static(path.join(__dirname, "../javascript")));
 app.use("/img", express.static(path.join(__dirname, "../img")));
+app.use("/html", express.static(path.join(__dirname, "../html")));
+app.use(express.static(path.join(__dirname, "../html")));
 app.use(express.json());
+app.use((err, req, res, next) => {
+    if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+        return res.status(400).json({ ok: false, error: 'JSON malformado' });
+    }
+    next();
+});
 
 // Página principal Registro
 app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "../html/Registri.html"));
-    
+});
+app.get("/Registri.html", (req, res) => {
+    res.sendFile(path.join(__dirname, "../html/Registri.html"));
 });
 app.get("/inicio.html", (req, res) => {
     res.sendFile(path.join(__dirname, "../html/inicio.html"));
@@ -60,6 +70,7 @@ app.post("/registro", (req, res) => {
     });
 
 });
+//Login
 app.post("/login", (req, res) => {
 
     const { usuario, correo, contraseña } = req.body;
@@ -94,6 +105,46 @@ app.get("/usuarios", (req, res) => {
         }
 
         res.json(resultado);
+
+    });
+
+});
+
+app.put("/actualizar-password", (req, res) => {
+
+    const { usuario, correo, actual, nueva } = req.body;
+
+    const sqlBuscar = "SELECT * FROM usuarios WHERE usuario = ? AND correo = ?";
+
+    conexion.query(sqlBuscar, [usuario, correo], (err, resultado) => {
+
+        if (err) {
+            console.log(err);
+            return res.json({ mensaje: "Error del servidor" });
+        }
+
+        if (resultado.length === 0) {
+            return res.json({
+                mensaje: "El usuario o el correo son incorrectos"
+            });
+        }
+
+        if (resultado[0].contraseña !== actual) {
+            return res.json({ mensaje: "La contraseña actual es incorrecta" });
+        }
+
+        const sqlActualizar = "UPDATE usuarios SET contraseña = ? WHERE correo = ?";
+
+        conexion.query(sqlActualizar, [nueva, correo], (err) => {
+
+            if (err) {
+                console.log(err);
+                return res.json({ mensaje: "No se pudo actualizar la contraseña" });
+            }
+
+            res.json({ mensaje: "Contraseña actualizada correctamente" });
+
+        });
 
     });
 

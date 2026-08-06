@@ -59,4 +59,11 @@ h1{
   margin-bottom: 15px;
   color: rgb(0, 0, 0);
 }
+
+/*Mensaje*/
+#mensaje,
+#mensajeactualizar{
+    margin-top: 10px;
+    font-weight: bold;
+}
  

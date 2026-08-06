@@ -33,7 +33,7 @@ button {
 input:focus {
   border-color: lime;
   outline: none;
-  box-shadow: 0px 0px 5px rgba(red, green, blue, alpha)
+  box-shadow: 0px 0px 5px rgba(0, 255, 0, 0.5);
 }
 
 button {
@@ -53,7 +53,7 @@ button:hover {
 hr {
   width: 60%;
   margin: 30px auto;
-  border: 1px solid #d3d3d3(255, 255, 255, 05);
+  border: 1px solid #d3d3d3;
 }
 h1{
   margin-bottom: 15px;
@@ -62,7 +62,7 @@ h1{
 }
 /*Mensajes*/
 #mensaje,
-#mensajeEditar{
+#mensajeLogin{
     margin-top: 10px;
     font-weight: bold;
 }

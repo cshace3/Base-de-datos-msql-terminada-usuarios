@@ -16,27 +16,17 @@
     </div>
 
 
-    <b>
-        <div class="contenedor">
-            <h1>Registro de usuario</h1>
+    <div class="contenedor">
+        <h1>Registro de usuario</h1>
+        <form onsubmit="registrar(event)">
             <input type="text" id="usuario" placeholder="Nombre Completo" required>
-            
             <input type="date" id="fecha" placeholder="Fecha de nacimiento" required>
-            
-            <input type="email" id="correo" placeholder="Correo Electronico" required>
-            
+            <input type="email" id="correo" placeholder="Correo Electrónico" required>
             <input type="password" id="contraseña" placeholder="Contraseña" required>
-            
-
-            
-                
-                    <button onclick="registrar()">Registrarse</button>
-             
-            <p id="mensaje"></p>
-            
-        </div>
-
-    </b>
+            <button type="submit">Registrarse</button>
+        </form>
+        <p id="mensaje"></p>
+    </div>
 
 
     <nav>
