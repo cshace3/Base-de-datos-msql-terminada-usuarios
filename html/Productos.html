@@ -4,59 +4,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maqueta polar</title>
+    <title>Productos | Polar'Is</title>
+    <link rel="stylesheet" href="../css styles/styleproductos.css">
     <link rel="stylesheet" href="/css/styleproductos.css">
+    <!-- FontAwesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<header>
-    <img src="/img/Banner.png" width="1000" height="180">
-</header>
-<div>
-    <center>
-        <img class="logo" src="/img/Logo1.png" width="50" height="50">
-    </center>
-
-</div>
-<nav>
-    <a href="inicio.html"><img src="/img/Inicio.png" width="50" height="50"></a>
-    <a href="contacto.html"><img src="/img/contacto.png" width="50" height="50"></a>
-    <a href="carrito.html"><img src="/img/carrito.png" width="50" height="50"></a>
-
-</nav>
 
 <body>
-
-    <h1>Polar'Is</h1>
-
-
-    <div class="buscador">
-        <input type="text" id="buscarProducto" placeholder="Buscar..." >
-        
-
+    <div class="background-decor">
+        <div class="circle circle-1"></div>
+        <div class="circle circle-2"></div>
     </div>
 
+    <div class="main-wrapper">
+        <header>
+            <img src="../img/Banner.png" onerror="this.src='/img/Banner.png'" alt="Banner Polar'Is">
+        </header>
 
-    <div id="lista-productos"></div>
-    
+        <div class="brand-title-area">
+            <div class="brand-logo-wrap">
+                <img class="logo" src="../img/Logo1.png" onerror="this.src='/img/Logo1.png'" alt="Logo Polar'Is">
+                <h1>Polar'Is</h1>
+            </div>
 
+            <nav>
+                <a href="inicio.html" title="Iniciar Sesión">
+                    <i class="fa-solid fa-user"></i>
+                    <span>Inicio</span>
+                </a>
+                <a href="contacto.html" title="Contacto">
+                    <i class="fa-solid fa-envelope"></i>
+                    <span>Contacto</span>
+                </a>
+                <a href="carrito.html" title="Ver Carrito">
+                    <i class="fa-solid fa-spider" style="color: #e62429;"></i>
+                    <span>Carrito</span>
+                </a>
+            </nav>
+        </div>
 
+        <div class="buscador">
+            <i class="fa-solid fa-magnifying-glass buscador-icon"></i>
+            <input type="text" id="buscarProducto" placeholder="Buscar productos por nombre o descripción...">
+        </div>
 
+        <div id="lista-productos"></div>
 
-
-    <div>
         <footer>
-            <i>
-                <b>
-                    <h2>
-                        "Vestirse bien es vivir bien"
-                    </h2>
-                </b>
-                Busca los productos que mas te gusten, no pierdas la oportunidad
-            </i>
+            <h2>"Vestirse bien es vivir bien"</h2>
+            <i>Encuentra los mejores estilos urbanos con la más alta calidad</i>
         </footer>
     </div>
+
+    <script src="../javascript/script.js"></script>
     <script src="/js/script.js"></script>
-
 </body>
-
 
 </html>

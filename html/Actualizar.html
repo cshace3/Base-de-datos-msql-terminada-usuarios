@@ -1,37 +1,110 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Actualizar</title>
+    <title>Actualizar Contraseña | Polar'Is</title>
+    <link rel="stylesheet" href="../css styles/styleactualizar.css">
     <link rel="stylesheet" href="/css/styleactualizar.css">
+    <!-- FontAwesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
 <body>
-    <div>
-        <center>
-            <img src="/img/Logo1.png" width="200" height="200">
-        </center>
-    </div>
-    <div class="contenedor">
-        <form id="foActualizar">
-            <input type="text" id="usuario" placeholder="Usuario" required>
-            <input type="email" id="correo" placeholder="Correo" required>
-            <input type="password" id="actual" placeholder="Contraseña actual" required>
-            <input type="password" id="nueva" placeholder="Nueva contraseña" required>
-            <input type="password" id="confirmar" placeholder="Confirmar contraseña" required>
-
-            <button type="submit">Actualizar</button>
-            <p id="mensajeactualizar"></p>
-        </form>
-
+    <div class="background-decor">
+        <div class="circle circle-1"></div>
+        <div class="circle circle-2"></div>
     </div>
 
+    <main class="container">
+        <div class="contenedor">
+            <div class="card-header">
+                <div class="brand-logo">
+                    <img src="../img/Logo1.png" onerror="this.src='/img/Logo1.png'" alt="Logo Polar'Is">
+                </div>
+                <h1>Actualizar Contraseña</h1>
+                <p class="subtitle">Cambia tu contraseña para mantener tu cuenta segura</p>
+            </div>
 
+            <form id="foActualizar" novalidate>
+                <div class="form-group">
+                    <label for="usuario">Usuario</label>
+                    <div class="input-wrapper">
+                        <i class="fa-regular fa-user input-icon"></i>
+                        <input type="text" id="usuario" placeholder="Nombre Completo" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="correo">Correo Electrónico</label>
+                    <div class="input-wrapper">
+                        <i class="fa-regular fa-envelope input-icon"></i>
+                        <input type="email" id="correo" placeholder="correo@ejemplo.com" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="actual">Contraseña Actual</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-lock input-icon"></i>
+                        <input type="password" id="actual" placeholder="••••••••" required>
+                        <button type="button" class="btn-icon" onclick="togglePasswordVisibility('actual', this)">
+                            <i class="fa-regular fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="nueva">Nueva Contraseña</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-key input-icon"></i>
+                        <input type="password" id="nueva" placeholder="••••••••" required>
+                        <button type="button" class="btn-icon" onclick="togglePasswordVisibility('nueva', this)">
+                            <i class="fa-regular fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirmar">Confirmar Nueva Contraseña</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-check-double input-icon"></i>
+                        <input type="password" id="confirmar" placeholder="••••••••" required>
+                        <button type="button" class="btn-icon" onclick="togglePasswordVisibility('confirmar', this)">
+                            <i class="fa-regular fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-primary">
+                    <span>Actualizar Contraseña</span>
+                    <i class="fa-solid fa-rotate"></i>
+                </button>
+                <p id="mensajeactualizar"></p>
+            </form>
+
+            <div class="nav-links">
+                <a href="inicio.html"><i class="fa-solid fa-arrow-left"></i> Volver a Iniciar Sesión</a>
+            </div>
+        </div>
+    </main>
+
+    <script src="../javascript/script.js"></script>
     <script src="/js/script.js"></script>
-
-
+    <script>
+        function togglePasswordVisibility(inputId, btn) {
+            const input = document.getElementById(inputId);
+            const icon = btn.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'fa-regular fa-eye-slash';
+            } else {
+                input.type = 'password';
+                icon.className = 'fa-regular fa-eye';
+            }
+        }
+    </script>
 </body>
 
 </html>

@@ -1,3 +1,5 @@
+let productosDisponibles = [];
+
 //Funcion Registrar
 async function registrar(event) {
     if (event) event.preventDefault();
@@ -6,7 +8,6 @@ async function registrar(event) {
     let correo = document.getElementById("correo").value;
     let contraseña = document.getElementById("contraseña").value;
     let mensaje = document.getElementById("mensaje");
-    let productosDisponibles = [];
 
     //Validar campos
     if (usuario === "" || fecha === "" || correo === "" || contraseña === "") {
@@ -199,7 +200,7 @@ async function cargarProductos() {
 
                 <p>$${Number(producto.precio).toLocaleString("es-CO")}</p>
 
-              <button onclick="agregarCarrito(${producto.id})">
+              <button onclick="agregarCarrito(${producto.id}, event)">
                   Agregar al carrito
               </button>
 
@@ -234,7 +235,8 @@ function buscarProducto() {
     }
 
     const resultados = productosDisponibles.filter(producto =>
-        producto.nombre.toLowerCase().includes(texto)
+        producto.nombre.toLowerCase().includes(texto) ||
+        (producto.descripcion && producto.descripcion.toLowerCase().includes(texto))
     );
 
     contenedor.innerHTML = "";
@@ -265,7 +267,7 @@ function buscarProducto() {
 
             <p>$${Number(producto.precio).toLocaleString("es-CO")}</p>
 
-            <button onclick="agregarCarrito(${producto.id})">
+            <button onclick="agregarCarrito(${producto.id}, event)">
                 Agregar al carrito
             </button>
 
@@ -277,7 +279,7 @@ function buscarProducto() {
     });
 }
 //Agregar al Carrito
-async function agregarCarrito(idProducto) {
+async function agregarCarrito(idProducto, ev) {
 
     const idUsuario = localStorage.getItem("id_usuario");
 
@@ -287,9 +289,10 @@ async function agregarCarrito(idProducto) {
     }
 
     // Buscar el botón que fue presionado
-    const boton = event.target;
-    const contenedorProducto = boton.parentElement;
-    const mensaje = contenedorProducto.querySelector(".mensaje");
+    const eventObj = ev || (typeof event !== "undefined" ? event : null);
+    const boton = eventObj ? eventObj.target : null;
+    const contenedorProducto = boton ? boton.parentElement : null;
+    const mensaje = contenedorProducto ? contenedorProducto.querySelector(".mensaje") : null;
 
     try {
 
@@ -311,13 +314,17 @@ async function agregarCarrito(idProducto) {
 
         if (datos.ok) {
 
-            mensaje.textContent = "Producto agregado al carrito";
-            mensaje.style.color = "green";
+            if (mensaje) {
+                mensaje.textContent = "Producto agregado al carrito";
+                mensaje.style.color = "green";
+            }
 
         } else {
 
-            mensaje.textContent = datos.mensaje || "No se pudo agregar el producto";
-            mensaje.style.color = "red";
+            if (mensaje) {
+                mensaje.textContent = datos.mensaje || "No se pudo agregar el producto";
+                mensaje.style.color = "red";
+            }
 
         }
 
@@ -325,11 +332,14 @@ async function agregarCarrito(idProducto) {
 
         console.error("Error al agregar al carrito:", error);
 
-        mensaje.textContent = "Error al conectar con el servidor";
-        mensaje.style.color = "red";
+        if (mensaje) {
+            mensaje.textContent = "Error al conectar con el servidor";
+            mensaje.style.color = "red";
+        }
 
     }
 }
+//Carga el carrito
 async function cargarCarrito() {
 
     const idUsuario = localStorage.getItem("id_usuario");
@@ -409,6 +419,7 @@ async function cargarCarrito() {
 
     }
 }
+//Aumentar cantidad de productos
 async function aumentarCantidad(idDetalle) {
 
     try {
@@ -443,6 +454,7 @@ async function aumentarCantidad(idDetalle) {
 
     }
 }
+//Disminuir cantidad de productos
 async function disminuirCantidad(idDetalle) {
 
     try {
@@ -482,6 +494,7 @@ async function disminuirCantidad(idDetalle) {
 
     }
 }
+//Eliminar producto del carrito
 async function eliminarProducto(idDetalle) {
 
     try {
@@ -512,7 +525,7 @@ if (document.getElementById("lista-productos")) {
 if (document.getElementById("lista-carrito")) {
     cargarCarrito();
 }
-
+//Captura búsqueda de productos
 const campoBusqueda = document.getElementById("buscarProducto");
 
 if (campoBusqueda) {

@@ -1,38 +1,58 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Mi Carrito | Polar'Is</title>
+    <link rel="stylesheet" href="../css styles/stylecarrito.css">
     <link rel="stylesheet" href="/css/stylecarrito.css">
+    <!-- FontAwesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<div>
-    <center>
-        <img class="logo" src="/img/Logo1.png" width="50" height="50">
-    </center>
 
-</div>
-<nav>
-    <a href="Productos.html"><img src="/img/atras.png" width="50" height="50"></a>
-</nav>
-</div>
-
-    <div class="contenedor-carrito">
-
-        <h1>Mi carrito</h1>
-
-        <!-- Aquí aparecerán los productos -->
-        <div id="lista-carrito"></div>
-
-        <!-- Total -->
-            <div id="total-carrito">
-            <h2>Total: $0</h2>
-        </div>
-        
-</div>
-     
-    <script src="/js/script.js"></script>
 <body>
-    
+    <div class="background-decor">
+        <div class="circle circle-1"></div>
+        <div class="circle circle-2"></div>
+    </div>
+
+    <div class="main-wrapper">
+        <div class="header-bar">
+            <div class="brand-logo-wrap">
+                <img class="logo" src="../img/Logo1.png" onerror="this.src='/img/Logo1.png'" alt="Logo Polar'Is">
+                <div class="spider-logo-badge" title="Spider Brand">
+                    <i class="fa-solid fa-spider"></i>
+                </div>
+                <span>Polar'Is</span>
+            </div>
+
+            <nav>
+                <a href="Productos.html">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    <span>Volver a Productos</span>
+                </a>
+            </nav>
+        </div>
+
+        <div class="contenedor-carrito">
+            <h1>
+                <i class="fa-solid fa-spider spider-icon"></i>
+                <span>Mi Carrito</span>
+            </h1>
+
+            <!-- Aquí aparecerán los productos -->
+            <div id="lista-carrito"></div>
+
+            <!-- Total -->
+            <div id="total-carrito">
+                <h2>Total: $0</h2>
+            </div>
+        </div>
+    </div>
+
+    <script src="../javascript/script.js"></script>
+    <script src="/js/script.js"></script>
 </body>
+
 </html>

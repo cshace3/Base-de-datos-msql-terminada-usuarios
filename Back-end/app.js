@@ -123,9 +123,18 @@ app.get("/usuarios", (req, res) => {
 // Los productos
 app.get("/productos", (req, res) => {
 
-    const sql = "SELECT * FROM productos";
+    const { buscar } = req.query;
 
-    conexion.query(sql, (err, resultado) => {
+    let sql = "SELECT * FROM productos";
+    let params = [];
+
+    if (buscar) {
+        sql = "SELECT * FROM productos WHERE nombre LIKE ? OR descripcion LIKE ?";
+        const termino = `%${buscar}%`;
+        params = [termino, termino];
+    }
+
+    conexion.query(sql, params, (err, resultado) => {
 
         if (err) {
             console.log("Error al consultar productos:", err);
@@ -255,6 +264,7 @@ app.get("/carrito/:usuario_id", (req, res) => {
     });
 
 });
+// Actualizar cantidad de un producto en el carrito
 app.put("/carrito/cantidad/:id", (req, res) => {
 
     const idDetalle = req.params.id;
@@ -292,6 +302,7 @@ app.put("/carrito/cantidad/:id", (req, res) => {
     });
 
 });
+// Eliminar producto del carrito
 app.delete("/carrito/producto/:id", (req, res) => {
 
     const idDetalle = req.params.id;
