@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Perfil | Polar'Is</title>
+    <link rel="stylesheet" href="../css styles/styleperfil.css">
+    <link rel="stylesheet" href="/css/styleperfil.css">
+    <!-- FontAwesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="background-decor">
+        <div class="circle circle-1"></div>
+        <div class="circle circle-2"></div>
+    </div>
+
+    <main class="container">
+        <div class="perfil">
+            <div class="card-header">
+                <div class="brand-logo">
+                    <img src="../img/Logo1.png" onerror="this.src='/img/Logo1.png'" alt="Logo Polar'Is">
+                    <div class="spider-badge-overlay" title="Spider Brand">
+                        <i class="fa-solid fa-spider"></i>
+                    </div>
+                </div>
+                <h1><i class="fa-solid fa-spider spider-icon"></i> Mi Perfil</h1>
+                <p class="subtitle">Información general de tu cuenta</p>
+            </div>
+
+            <div class="datos-perfil">
+                <div class="dato-item">
+                    <i class="fa-regular fa-user dato-icon"></i>
+                    <div class="dato-info">
+                        <strong>Nombre de Usuario</strong>
+                        <span id="usuario">Cargando...</span>
+                    </div>
+                </div>
+
+                <div class="dato-item">
+                    <i class="fa-regular fa-envelope dato-icon"></i>
+                    <div class="dato-info">
+                        <strong>Correo Electrónico</strong>
+                        <span id="correo">Cargando...</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button class="btn-primary" onclick="window.location.href='Productos.html'">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    <span>Volver a Productos</span>
+                </button>
+                <button class="btn-secondary" onclick="window.location.href='Actualizar.html'">
+                    <i class="fa-solid fa-key"></i>
+                    <span>Cambiar Contraseña</span>
+                </button>
+                <button class="btn-danger" onclick="cerrarSesion()">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    <span>Cerrar Sesión</span>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <script src="../javascript/script.js"></script>
+    <script src="/js/script.js"></script>
+</body>
+
+</html>

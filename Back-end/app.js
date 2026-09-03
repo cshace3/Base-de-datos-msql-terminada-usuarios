@@ -52,6 +52,9 @@ app.get("/contacto.html", (req, res) => {
 app.get("/Actualizar.html", (req, res) => {
     res.sendFile(path.join(__dirname, "../html/Actualizar.html"));
 });
+app.get("/perfil.html", (req, res) => {
+    res.sendFile(path.join(__dirname, "../html/perfil.html"));
+});
 app.post("/registro", (req, res) => {
 
     const { usuario, correo, contraseña } = req.body;
@@ -116,6 +119,43 @@ app.get("/usuarios", (req, res) => {
         }
 
         res.json(resultado);
+
+    });
+
+});
+app.get("/perfil/:id", (req, res) => {
+
+    const id = req.params.id;
+
+    const sql = `
+        SELECT id, usuario, correo
+        FROM usuarios
+        WHERE id = ?
+    `;
+
+    conexion.query(sql, [id], (err, resultado) => {
+
+        if (err) {
+            console.log(err);
+            return res.status(500).json({
+                ok: false,
+                mensaje: "Error al consultar el perfil"
+            });
+        }
+
+        if (resultado.length === 0) {
+            return res.status(404).json({
+                ok: false,
+                mensaje: "Usuario no encontrado"
+            });
+        }
+
+        res.json({
+            ok: true,
+            id_usuario: resultado[0].id,
+            usuario: resultado[0].usuario,
+            correo: resultado[0].correo
+        });
 
     });
 

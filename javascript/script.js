@@ -517,13 +517,66 @@ async function eliminarProducto(idDetalle) {
 
     }
 }
+//Carga el perfil del usuario
+async function cargarPerfil() {
 
+    const idUsuario = localStorage.getItem("id_usuario");
+
+    if (!idUsuario) {
+
+        alert("No hay una sesión iniciada");
+
+        window.location.href = "inicio.html";
+
+        return;
+    }
+
+    try {
+
+        const respuesta = await fetch(`/perfil/${idUsuario}`);
+
+        const datos = await respuesta.json();
+
+        if (!respuesta.ok) {
+
+            alert("No se pudo cargar el perfil");
+
+            return;
+        }
+
+        document.getElementById("usuario").textContent = datos.usuario;
+
+        document.getElementById("correo").textContent = datos.correo;
+
+    } catch (error) {
+
+        console.error("Error:", error);
+
+        alert("Error al conectar con el servidor");
+
+    }
+
+}
+
+// Cerrar sesión del usuario
+function cerrarSesion() {
+    localStorage.removeItem("id_usuario");
+    localStorage.removeItem("usuario");
+    window.location.href = "inicio.html";
+}
+//Lista de productos
 if (document.getElementById("lista-productos")) {
     cargarProductos();
 }
 
 if (document.getElementById("lista-carrito")) {
     cargarCarrito();
+}
+//Del perfil del usuario
+if (window.location.pathname.includes("perfil.html")) {
+
+    cargarPerfil();
+
 }
 //Captura búsqueda de productos
 const campoBusqueda = document.getElementById("buscarProducto");

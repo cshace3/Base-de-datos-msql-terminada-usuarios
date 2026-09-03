@@ -1,64 +1,81 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Productos | Polar'Is</title>
-    <link rel="stylesheet" href="../css styles/styleproductos.css">
-    <link rel="stylesheet" href="/css/styleproductos.css">
+    <link rel="stylesheet" href="../css styles/styleproductos.css" />
+    <link rel="stylesheet" href="/css/styleproductos.css" />
     <!-- FontAwesome icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-</head>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+  </head>
 
-<body>
+  <body>
     <div class="background-decor">
-        <div class="circle circle-1"></div>
-        <div class="circle circle-2"></div>
+      <div class="circle circle-1"></div>
+      <div class="circle circle-2"></div>
     </div>
 
     <div class="main-wrapper">
-        <header>
-            <img src="../img/Banner.png" onerror="this.src='/img/Banner.png'" alt="Banner Polar'Is">
-        </header>
+      <header>
+        <img
+          src="../img/Banner.png"
+          onerror="this.src = '/img/Banner.png'"
+          alt="Banner Polar'Is"
+        />
+      </header>
 
-        <div class="brand-title-area">
-            <div class="brand-logo-wrap">
-                <img class="logo" src="../img/Logo1.png" onerror="this.src='/img/Logo1.png'" alt="Logo Polar'Is">
-                <h1>Polar'Is</h1>
-            </div>
-
-            <nav>
-                <a href="inicio.html" title="Iniciar Sesión">
-                    <i class="fa-solid fa-user"></i>
-                    <span>Inicio</span>
-                </a>
-                <a href="contacto.html" title="Contacto">
-                    <i class="fa-solid fa-envelope"></i>
-                    <span>Contacto</span>
-                </a>
-                <a href="carrito.html" title="Ver Carrito">
-                    <i class="fa-solid fa-spider" style="color: #e62429;"></i>
-                    <span>Carrito</span>
-                </a>
-            </nav>
+      <div class="brand-title-area">
+        <div class="brand-logo-wrap">
+          <img
+            class="logo"
+            src="../img/Logo1.png"
+            onerror="this.src = '/img/Logo1.png'"
+            alt="Logo Polar'Is"
+          />
+          <h1>Polar'Is</h1>
         </div>
 
-        <div class="buscador">
-            <i class="fa-solid fa-magnifying-glass buscador-icon"></i>
-            <input type="text" id="buscarProducto" placeholder="Buscar productos por nombre o descripción...">
-        </div>
+        <nav>
+          <a href="inicio.html" title="Iniciar Sesión">
+            <i class="fa-solid fa-user"></i>
+            <span>Inicio</span>
+          </a>
+          <button onclick="window.location.href = 'perfil.html'">
+            Mi perfil
+          </button>
+          <a href="contacto.html" title="Contacto">
+            <i class="fa-solid fa-envelope"></i>
+            <span>Contacto</span>
+          </a>
+          <a href="carrito.html" title="Ver Carrito">
+            <i class="fa-solid fa-spider" style="color: #e62429"></i>
+            <span>Carrito</span>
+          </a>
+        </nav>
+      </div>
 
-        <div id="lista-productos"></div>
+      <div class="buscador">
+        <i class="fa-solid fa-magnifying-glass buscador-icon"></i>
+        <input
+          type="text"
+          id="buscarProducto"
+          placeholder="Buscar productos por nombre o descripción..."
+        />
+      </div>
 
-        <footer>
-            <h2>"Vestirse bien es vivir bien"</h2>
-            <i>Encuentra los mejores estilos urbanos con la más alta calidad</i>
-        </footer>
+      <div id="lista-productos"></div>
+
+      <footer>
+        <h2>"Vestirse bien es vivir bien"</h2>
+        <i>Encuentra los mejores estilos urbanos con la más alta calidad</i>
+      </footer>
     </div>
 
     <script src="../javascript/script.js"></script>
     <script src="/js/script.js"></script>
-</body>
-
+  </body>
 </html>
