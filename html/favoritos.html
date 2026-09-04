@@ -4,9 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi Carrito | Polar'Is</title>
-    <link rel="stylesheet" href="../css styles/stylecarrito.css">
-    <link rel="stylesheet" href="/css/stylecarrito.css">
+    <title>Mis Favoritos | Polar'Is</title>
+    <link rel="stylesheet" href="../css styles/stylefavoritos.css">
+    <link rel="stylesheet" href="/css/stylefavoritos.css">
     <!-- FontAwesome icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -21,9 +21,6 @@
         <div class="header-bar">
             <div class="brand-logo-wrap">
                 <img class="logo" src="../img/Logo1.png" onerror="this.src='/img/Logo1.png'" alt="Logo Polar'Is">
-                <div class="spider-logo-badge" title="Spider Brand">
-                    <i class="fa-solid fa-spider"></i>
-                </div>
                 <span>Polar'Is</span>
             </div>
 
@@ -32,26 +29,25 @@
                     <i class="fa-solid fa-arrow-left"></i>
                     <span>Volver a Productos</span>
                 </a>
-                <a href="favoritos.html" title="Ver Favoritos">
-                    <i class="fa-solid fa-heart" style="color: #e62429;"></i>
-                    <span>Favoritos</span>
+                <a href="perfil.html" title="Mi Perfil">
+                    <i class="fa-solid fa-user"></i>
+                    <span>Perfil</span>
+                </a>
+                <a href="carrito.html" title="Ver Carrito">
+                    <i class="fa-solid fa-spider" style="color: #e62429;"></i>
+                    <span>Carrito</span>
                 </a>
             </nav>
         </div>
 
-        <div class="contenedor-carrito">
+        <div class="contenedor-favoritos">
             <h1>
-                <i class="fa-solid fa-spider spider-icon"></i>
-                <span>Mi Carrito</span>
+                <i class="fa-solid fa-heart"></i>
+                <span>Mis Productos Favoritos</span>
             </h1>
 
-            <!-- Aquí aparecerán los productos -->
-            <div id="lista-carrito"></div>
-
-            <!-- Total -->
-            <div id="total-carrito">
-                <h2>Total: $0</h2>
-            </div>
+            <!-- Contenedor donde se cargarán los productos favoritos dinámicamente -->
+            <div id="lista-favoritos"></div>
         </div>
     </div>
 

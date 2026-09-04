@@ -46,6 +46,9 @@ app.get("/inicio.html", (req, res) => {
 app.get("/Productos.html", (req, res) => {
     res.sendFile(path.join(__dirname, "../html/Productos.html"));
 });
+app.get("/detalleproducto.html", (req, res) => {
+    res.sendFile(path.join(__dirname, "../html/detalleproducto.html"));
+});
 app.get("/contacto.html", (req, res) => {
     res.sendFile(path.join(__dirname, "../html/contacto.html"));
 });
@@ -54,6 +57,9 @@ app.get("/Actualizar.html", (req, res) => {
 });
 app.get("/perfil.html", (req, res) => {
     res.sendFile(path.join(__dirname, "../html/perfil.html"));
+});
+app.get("/favoritos.html", (req, res) => {
+    res.sendFile(path.join(__dirname, "../html/favoritos.html"));
 });
 app.post("/registro", (req, res) => {
 
@@ -187,6 +193,176 @@ app.get("/productos", (req, res) => {
         res.json(resultado);
 
     });
+
+});
+// Obtener un producto por su ID
+app.get("/productos/:id", (req, res) => {
+
+    const id = req.params.id;
+
+    const sql = "SELECT * FROM productos WHERE id = ?";
+
+    conexion.query(sql, [id], (err, resultado) => {
+
+        if (err) {
+            console.log("Error al consultar el producto:", err);
+
+            return res.status(500).json({
+                ok: false,
+                mensaje: "Error al obtener el producto"
+            });
+        }
+
+        if (resultado.length === 0) {
+            return res.status(404).json({
+                ok: false,
+                mensaje: "Producto no encontrado"
+            });
+        }
+
+        res.json({
+            ok: true,
+            producto: resultado[0]
+        });
+
+    });
+
+});
+// ===============================
+// FAVORITOS
+// ===============================
+
+// Obtener favoritos de un usuario
+app.get("/favoritos/:usuario_id", (req, res) => {
+
+    const usuarioId = req.params.usuario_id;
+
+    const sql = `
+        SELECT
+            favoritos.id,
+            favoritos.producto_id,
+            productos.nombre,
+            productos.descripcion,
+            productos.precio,
+            productos.imagen
+        FROM favoritos
+        INNER JOIN productos
+            ON favoritos.producto_id = productos.id
+        WHERE favoritos.usuario_id = ?
+        ORDER BY favoritos.fecha_agregado DESC
+    `;
+
+    conexion.query(sql, [usuarioId], (err, resultado) => {
+
+        if (err) {
+            console.log("Error al obtener favoritos:", err);
+
+            return res.status(500).json({
+                ok: false,
+                mensaje: "Error al obtener los favoritos"
+            });
+        }
+
+        res.json({
+            ok: true,
+            favoritos: resultado
+        });
+
+    });
+
+});
+
+
+// Agregar producto a favoritos
+app.post("/favoritos/agregar", (req, res) => {
+
+    const { usuario_id, producto_id } = req.body;
+
+    if (!usuario_id || !producto_id) {
+
+        return res.status(400).json({
+            ok: false,
+            mensaje: "Faltan datos del usuario o del producto"
+        });
+
+    }
+
+    const sql = `
+        INSERT INTO favoritos
+        (usuario_id, producto_id)
+        VALUES (?, ?)
+    `;
+
+    conexion.query(
+        sql,
+        [usuario_id, producto_id],
+        (err) => {
+
+            if (err) {
+
+                if (err.code === "ER_DUP_ENTRY") {
+
+                    return res.json({
+                        ok: false,
+                        mensaje: "El producto ya está en favoritos"
+                    });
+
+                }
+
+                console.log(err);
+
+                return res.status(500).json({
+                    ok: false,
+                    mensaje: "No se pudo agregar a favoritos"
+                });
+
+            }
+
+            res.json({
+                ok: true,
+                mensaje: "Producto agregado a favoritos"
+            });
+
+        }
+    );
+
+});
+
+
+// Eliminar producto de favoritos
+app.delete("/favoritos/:usuario_id/:producto_id", (req, res) => {
+
+    const usuarioId = req.params.usuario_id;
+    const productoId = req.params.producto_id;
+
+    const sql = `
+        DELETE FROM favoritos
+        WHERE usuario_id = ? AND producto_id = ?
+    `;
+
+    conexion.query(
+        sql,
+        [usuarioId, productoId],
+        (err) => {
+
+            if (err) {
+
+                console.log(err);
+
+                return res.status(500).json({
+                    ok: false,
+                    mensaje: "No se pudo eliminar de favoritos"
+                });
+
+            }
+
+            res.json({
+                ok: true,
+                mensaje: "Producto eliminado de favoritos"
+            });
+
+        }
+    );
 
 });
 // Agregar al carrito
