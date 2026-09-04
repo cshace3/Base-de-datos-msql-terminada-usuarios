@@ -190,7 +190,7 @@ async function cargarProductos() {
         const resFav = await fetch(`/favoritos/${usuarioId}`);
         const favData = await resFav.json();
         if (favData.ok && Array.isArray(favData.favoritos)) {
-          favData.favoritos.forEach(f => favoritosSet.add(f.producto_id));
+          favData.favoritos.forEach((f) => favoritosSet.add(f.producto_id));
         }
       } catch (e) {
         console.error("Error al obtener favoritos iniciales:", e);
@@ -246,54 +246,47 @@ async function cargarProductos() {
 }
 
 async function cambiarFavorito(idProducto, boton) {
+  const usuarioId = localStorage.getItem("id_usuario");
 
-    const usuarioId = localStorage.getItem("id_usuario");
+  if (!usuarioId) {
+    alert("Debes iniciar sesión para agregar favoritos.");
+    return;
+  }
 
-    if (!usuarioId) {
-        alert("Debes iniciar sesión para agregar favoritos.");
-        return;
+  const esFavorito = boton.textContent.trim() === "❤️";
+
+  if (esFavorito) {
+    const respuesta = await fetch(`/favoritos/${usuarioId}/${idProducto}`, {
+      method: "DELETE",
+    });
+
+    const datos = await respuesta.json();
+
+    if (datos.ok) {
+      boton.textContent = "🤍";
+      boton.title = "Agregar a favoritos";
     }
+  } else {
+    const respuesta = await fetch("/favoritos/agregar", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        usuario_id: usuarioId,
+        producto_id: idProducto,
+      }),
+    });
 
-    const esFavorito = boton.textContent.trim() === "❤️";
+    const datos = await respuesta.json();
 
-    if (esFavorito) {
-
-        const respuesta = await fetch(
-            `/favoritos/${usuarioId}/${idProducto}`,
-            {
-                method: "DELETE"
-            }
-        );
-
-        const datos = await respuesta.json();
-
-        if (datos.ok) {
-            boton.textContent = "🤍";
-            boton.title = "Agregar a favoritos";
-        }
-
+    if (datos.ok) {
+      boton.textContent = "❤️";
+      boton.title = "Quitar de favoritos";
     } else {
-
-        const respuesta = await fetch("/favoritos/agregar", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                usuario_id: usuarioId,
-                producto_id: idProducto
-            })
-        });
-
-        const datos = await respuesta.json();
-
-        if (datos.ok) {
-            boton.textContent = "❤️";
-            boton.title = "Quitar de favoritos";
-        } else {
-            alert(datos.mensaje);
-        }
+      alert(datos.mensaje);
     }
+  }
 }
 //Buscar productos
 function buscarProducto() {
@@ -879,7 +872,7 @@ async function eliminarDeFavoritos(idProducto, boton) {
 
   try {
     const respuesta = await fetch(`/favoritos/${usuarioId}/${idProducto}`, {
-      method: "DELETE"
+      method: "DELETE",
     });
     const datos = await respuesta.json();
 
@@ -905,6 +898,273 @@ async function eliminarDeFavoritos(idProducto, boton) {
     console.error("Error al eliminar favorito:", err);
   }
 }
+//Reseñas
+let calificacionSeleccionada = 0;
+
+function seleccionarCalificacion(calificacion) {
+  calificacionSeleccionada = calificacion;
+
+  const botones = document.querySelectorAll(".estrellas-calificacion button");
+
+  botones.forEach((boton, indice) => {
+    if (indice < calificacion) {
+      boton.classList.add("activa");
+    } else {
+      boton.classList.remove("activa");
+    }
+    boton.classList.remove("hover");
+  });
+
+  const textoInfo = document.getElementById("calificacion-seleccionada");
+  if (textoInfo) {
+    if (calificacion > 0) {
+      textoInfo.textContent = `Has seleccionado ${calificacion} de 5 estrellas`;
+      textoInfo.classList.add("seleccionada");
+    } else {
+      textoInfo.textContent = "Selecciona una calificación";
+      textoInfo.classList.remove("seleccionada");
+    }
+  }
+}
+
+function hoverCalificacion(calificacion) {
+  const botones = document.querySelectorAll(".estrellas-calificacion button");
+  botones.forEach((boton, indice) => {
+    if (indice < calificacion) {
+      boton.classList.add("hover");
+    } else {
+      boton.classList.remove("hover");
+    }
+  });
+}
+
+function resetHoverEstrellas() {
+  const botones = document.querySelectorAll(".estrellas-calificacion button");
+  botones.forEach((boton, indice) => {
+    boton.classList.remove("hover");
+    if (indice < calificacionSeleccionada) {
+      boton.classList.add("activa");
+    } else {
+      boton.classList.remove("activa");
+    }
+  });
+}
+
+async function enviarResena() {
+  const usuarioId = localStorage.getItem("id_usuario");
+  const mensaje = document.getElementById("mensaje-resena");
+
+  if (!usuarioId) {
+    if (mensaje) {
+      mensaje.textContent = "Debes iniciar sesión para publicar una reseña.";
+      mensaje.className = "mensaje-alerta error";
+    } else {
+      alert("Debes iniciar sesión para publicar una reseña.");
+    }
+    return;
+  }
+
+  if (calificacionSeleccionada === 0) {
+    if (mensaje) {
+      mensaje.textContent =
+        "Por favor selecciona de 1 a 5 estrellas para calificar.";
+      mensaje.className = "mensaje-alerta error";
+    } else {
+      alert("Selecciona una calificación de 1 a 5 estrellas.");
+    }
+    return;
+  }
+
+  const parametros = new URLSearchParams(window.location.search);
+  const productoId = parametros.get("id");
+
+  if (!productoId) {
+    if (mensaje) {
+      mensaje.textContent =
+        "No se encontró el id del producto que estás calificando.";
+      mensaje.className = "mensaje-alerta error";
+    }
+    return;
+  }
+
+  const campoComentario = document.getElementById("comentario-resena");
+  const comentario = campoComentario ? campoComentario.value.trim() : "";
+
+  try {
+    const respuesta = await fetch("/reseñas/agregar", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        usuario_id: Number(usuarioId),
+        producto_id: Number(productoId),
+        calificacion: calificacionSeleccionada,
+        comentario: comentario,
+      }),
+    });
+
+    const datos = await respuesta.json();
+
+    if (datos.ok) {
+      if (mensaje) {
+        mensaje.textContent = datos.mensaje || "Reseña guardada correctamente.";
+        mensaje.className = "mensaje-alerta exito";
+      }
+
+      if (campoComentario) campoComentario.value = "";
+      seleccionarCalificacion(0);
+
+      cargarResenas(productoId);
+    } else {
+      if (mensaje) {
+        mensaje.textContent = datos.mensaje || "No se pudo guardar la reseña.";
+        mensaje.className = "mensaje-alerta error";
+      }
+    }
+  } catch (error) {
+    console.error("Error al publicar la reseña:", error);
+    if (mensaje) {
+      mensaje.textContent = "Error al conectar con el servidor.";
+      mensaje.className = "mensaje-alerta error";
+    }
+  }
+}
+
+//Mostrar reseñas de un producto
+async function cargarResenas(productoId) {
+  const lista = document.getElementById("lista-resenas");
+  const resumen = document.getElementById("resumen-calificacion");
+
+  if (!lista) return;
+
+  try {
+    const respuesta = await fetch(`/reseñas/${productoId}`);
+
+    if (!respuesta.ok) {
+      throw new Error(`Error HTTP: ${respuesta.status}`);
+    }
+
+    const datos = await respuesta.json();
+
+    if (!datos.ok || !datos.reseñas || datos.reseñas.length === 0) {
+      lista.innerHTML = `
+        <div class="sin-resenas">
+          <i class="fa-regular fa-comment-dots"></i>
+          <p>Este producto todavía no tiene reseñas. ¡Sé el primero en calificarlo!</p>
+        </div>
+      `;
+
+      if (resumen) {
+        resumen.innerHTML = `
+          <div class="score-badge empty">
+            <span>⭐ Sin calificaciones</span>
+            <small>Sé el primero en opinar</small>
+          </div>
+        `;
+      }
+
+      return;
+    }
+
+    let suma = 0;
+    datos.reseñas.forEach((reseña) => {
+      suma += reseña.calificacion;
+    });
+
+    const promedio = (suma / datos.reseñas.length).toFixed(1);
+    const idUsuarioLogueado = localStorage.getItem("id_usuario");
+
+    if (resumen) {
+      const estrellasHeader =
+        "★".repeat(Math.round(promedio)) + "☆".repeat(5 - Math.round(promedio));
+      resumen.innerHTML = `
+        <div class="score-badge">
+          <div class="score-number">${promedio}</div>
+          <div class="score-stars-col">
+            <span class="stars-gold">${estrellasHeader}</span>
+            <small>${datos.reseñas.length} ${datos.reseñas.length === 1 ? "reseña" : "reseñas"}</small>
+          </div>
+        </div>
+      `;
+    }
+
+    lista.innerHTML = "";
+
+    datos.reseñas.forEach((reseña) => {
+      const div = document.createElement("div");
+      div.classList.add("resena");
+
+      const estrellasHtml =
+        "★".repeat(reseña.calificacion) + "☆".repeat(5 - reseña.calificacion);
+
+      const esMiResena =
+        Number(idUsuarioLogueado) === Number(reseña.usuario_id);
+      const botonEliminar = esMiResena
+        ? `<button class="btn-eliminar-resena" onclick="eliminarResena(${reseña.id}, ${productoId})" title="Eliminar mi reseña">
+             <i class="fa-solid fa-trash-can"></i> Eliminar
+           </button>`
+        : "";
+
+      div.innerHTML = `
+        <div class="resena-header">
+          <div class="usuario-info">
+            <div class="avatar-usuario">
+              <i class="fa-solid fa-circle-user"></i>
+            </div>
+            <div>
+              <h4>${reseña.usuario}</h4>
+              <span class="fecha-resena">${new Date(reseña.fecha_creacion).toLocaleDateString("es-CO", { year: "numeric", month: "short", day: "numeric" })}</span>
+            </div>
+          </div>
+          <div class="resena-estrellas-col">
+            <div class="estrellas-resena">${estrellasHtml}</div>
+            ${botonEliminar}
+          </div>
+        </div>
+        <p class="comentario-texto">${reseña.comentario ? reseña.comentario : "<em>Sin comentario escrito.</em>"}</p>
+      `;
+
+      lista.appendChild(div);
+    });
+  } catch (error) {
+    console.error("Error al cargar reseñas:", error);
+    lista.innerHTML = `
+      <div class="sin-resenas error">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <p>No se pudieron cargar las reseñas en este momento.</p>
+      </div>
+    `;
+  }
+}
+
+async function eliminarResena(idReseña, productoId) {
+  if (!confirm("¿Estás seguro de que deseas eliminar tu reseña?")) {
+    return;
+  }
+
+  try {
+    const respuesta = await fetch(`/reseñas/${idReseña}`, {
+      method: "DELETE",
+    });
+
+    const datos = await respuesta.json();
+
+    if (datos.ok) {
+      const mensaje = document.getElementById("mensaje-resena");
+      if (mensaje) {
+        mensaje.textContent = "Tu reseña ha sido eliminada.";
+        mensaje.className = "mensaje-alerta exito";
+      }
+      cargarResenas(productoId);
+    } else {
+      alert(datos.mensaje || "No se pudo eliminar la reseña.");
+    }
+  } catch (error) {
+    console.error("Error al eliminar la reseña:", error);
+    alert("Error de conexión al intentar eliminar la reseña.");
+  }
+}
 
 // Cerrar sesión del usuario
 function cerrarSesion() {
@@ -914,9 +1174,7 @@ function cerrarSesion() {
 }
 // Ir al detalle del producto
 function verDetalleProducto(idProducto) {
-
-    window.location.href = `detalleproducto.html?id=${idProducto}`;
-
+  window.location.href = `detalleproducto.html?id=${idProducto}`;
 }
 //Lista de productos
 if (document.getElementById("lista-productos")) {
@@ -944,4 +1202,10 @@ if (campoBusqueda) {
 // Cargar detalle automáticamente
 if (document.getElementById("detalle-producto")) {
   cargarDetalleProducto();
+}
+const parametros = new URLSearchParams(window.location.search);
+const productoIdResena = parametros.get("id");
+
+if (productoIdResena && document.getElementById("lista-resenas")) {
+  cargarResenas(productoIdResena);
 }

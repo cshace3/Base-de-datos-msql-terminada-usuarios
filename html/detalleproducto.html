@@ -1,108 +1,124 @@
 <!doctype html>
 <html lang="es">
+  <head>
+    <meta charset="UTF-8" />
 
-<head>
-
-    <meta charset="UTF-8">
-
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <title>Detalle del producto | Polar'Is</title>
 
-    <link rel="stylesheet" href="/css/styleproductos.css">
+    <link rel="stylesheet" href="/css/styleproductos.css" />
 
     <link
-        rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-    >
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+  </head>
 
-</head>
-
-<body>
-
+  <body>
     <div class="main-wrapper">
+      <header>
+        <img src="/img/Banner.png" alt="Banner Polar'Is" />
+      </header>
 
-        <header>
+      <div class="brand-title-area">
+        <div class="brand-logo-wrap">
+          <img class="logo" src="/img/Logo1.png" alt="Logo Polar'Is" />
+          <nav>
+            <a href="Productos.html">
+              <i class="fa-solid fa-arrow-left"></i>
+              <span>Volver a Productos</span>
+            </a>
+          </nav>
 
-            <img
-                src="/img/Banner.png"
-                alt="Banner Polar'Is"
-            >
-
-        </header>
-
-
-        <div class="brand-title-area">
-
-            <div class="brand-logo-wrap">
-
-                <img
-                    class="logo"
-                    src="/img/Logo1.png"
-                    alt="Logo Polar'Is"
-                >
-                <nav>
-                <a href="Productos.html">
-                    <i class="fa-solid fa-arrow-left"></i>
-                    <span>Volver a Productos</span>
-                </a>
-            </nav>
-
-                <h1>Polar'Is</h1>
-
-            </div>
-
-
-            <nav>
-
-                <a href="inicio.html">
-                    <i class="fa-solid fa-user"></i>
-                    <span>Inicio</span>
-                </a>
-
-                <button onclick="window.location.href='perfil.html'">
-                    Mi perfil
-                </button>
-
-                <a href="contacto.html">
-                    <i class="fa-solid fa-envelope"></i>
-                    <span>Contacto</span>
-                </a>
-
-                <a href="carrito.html">
-                    <i class="fa-solid fa-spider" style="color: #e62429"></i>
-                    <span>Carrito</span>
-                </a>
-
-            </nav>
-
+          <h1>Polar'Is</h1>
         </div>
 
+        <nav>
+          <a href="inicio.html">
+            <i class="fa-solid fa-user"></i>
+            <span>Inicio</span>
+          </a>
 
-        <!-- Detalle del producto -->
+          <button onclick="window.location.href = 'perfil.html'">
+            Mi perfil
+          </button>
 
-        <div id="detalle-producto">
+          <a href="contacto.html">
+            <i class="fa-solid fa-envelope"></i>
+            <span>Contacto</span>
+          </a>
 
-            <p>Cargando producto...</p>
+          <a href="carrito.html">
+            <i class="fa-solid fa-spider" style="color: #e62429"></i>
+            <span>Carrito</span>
+          </a>
+        </nav>
+      </div>
 
+      <!-- Detalle del producto -->
+
+      <div id="detalle-producto">
+        <p>Cargando producto...</p>
+      </div>
+
+      <!-- Reseñas del producto -->
+
+      <div class="seccion-resenas">
+        <div class="header-resenas">
+          <h2><i class="fa-solid fa-star" style="color: #ffb700;"></i> Calificaciones y reseñas</h2>
         </div>
 
+        <div id="resumen-calificacion" class="resumen-calificacion-card">
+          <p>Cargando calificación...</p>
+        </div>
 
-        <footer>
+        <div class="formulario-resena">
+          <h3>Escribe tu opinión</h3>
 
-            <h2>"Vestirse bien es vivir bien"</h2>
+          <div class="estrellas-calificacion" onmouseleave="resetHoverEstrellas()">
+            <button type="button" class="btn-estrella" data-val="1" onclick="seleccionarCalificacion(1)" onmouseover="hoverCalificacion(1)" aria-label="1 estrella">
+              ★
+            </button>
+            <button type="button" class="btn-estrella" data-val="2" onclick="seleccionarCalificacion(2)" onmouseover="hoverCalificacion(2)" aria-label="2 estrellas">
+              ★
+            </button>
+            <button type="button" class="btn-estrella" data-val="3" onclick="seleccionarCalificacion(3)" onmouseover="hoverCalificacion(3)" aria-label="3 estrellas">
+              ★
+            </button>
+            <button type="button" class="btn-estrella" data-val="4" onclick="seleccionarCalificacion(4)" onmouseover="hoverCalificacion(4)" aria-label="4 estrellas">
+              ★
+            </button>
+            <button type="button" class="btn-estrella" data-val="5" onclick="seleccionarCalificacion(5)" onmouseover="hoverCalificacion(5)" aria-label="5 estrellas">
+              ★
+            </button>
+          </div>
 
-            <i>
-                Encuentra los mejores estilos urbanos con la más alta calidad
-            </i>
+          <p id="calificacion-seleccionada" class="info-calificacion">Selecciona una calificación</p>
 
-        </footer>
+          <textarea
+            id="comentario-resena"
+            placeholder="¿Qué te pareció este producto? Comparte tu experiencia..."
+            rows="4"
+          ></textarea>
 
+          <button type="button" class="btn-publicar-resena" onclick="enviarResena()">
+            <i class="fa-solid fa-paper-plane"></i> Publicar reseña
+          </button>
+
+          <p id="mensaje-resena" class="mensaje-alerta"></p>
+        </div>
+
+        <div id="lista-resenas" class="lista-resenas-container">Cargando reseñas...</div>
+      </div>
+
+      <footer>
+        <h2>"Vestirse bien es vivir bien"</h2>
+
+        <i> Encuentra los mejores estilos urbanos con la más alta calidad </i>
+      </footer>
     </div>
 
-
     <script src="/js/script.js"></script>
-
-</body>
-
+  </body>
 </html>

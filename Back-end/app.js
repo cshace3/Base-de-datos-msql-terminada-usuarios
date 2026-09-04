@@ -365,6 +365,152 @@ app.delete("/favoritos/:usuario_id/:producto_id", (req, res) => {
     );
 
 });
+// ===============================
+// RESEÑAS Y CALIFICACIONES
+// ===============================
+
+// Obtener las reseñas de un producto
+app.get(["/reseñas/:producto_id", "/resenas/:producto_id", encodeURI("/reseñas/:producto_id")], (req, res) => {
+
+    const productoId = req.params.producto_id;
+
+    const sql = `
+        SELECT
+            reseñas.id,
+            reseñas.usuario_id,
+            usuarios.usuario,
+            reseñas.calificacion,
+            reseñas.comentario,
+            reseñas.fecha_creacion
+        FROM reseñas
+        INNER JOIN usuarios
+            ON reseñas.usuario_id = usuarios.id
+        WHERE reseñas.producto_id = ?
+        ORDER BY reseñas.fecha_creacion DESC
+    `;
+
+    conexion.query(sql, [productoId], (err, resultado) => {
+
+        if (err) {
+            console.log("Error al obtener reseñas:", err);
+
+            return res.status(500).json({
+                ok: false,
+                mensaje: "Error al obtener las reseñas"
+            });
+        }
+
+        res.json({
+            ok: true,
+            reseñas: resultado
+        });
+
+    });
+
+});
+
+
+// Agregar una reseña
+app.post(["/reseñas/agregar", "/resenas/agregar", encodeURI("/reseñas/agregar")], (req, res) => {
+
+    const {
+        usuario_id,
+        producto_id,
+        calificacion,
+        comentario
+    } = req.body;
+
+    if (!usuario_id || !producto_id || !calificacion) {
+
+        return res.status(400).json({
+            ok: false,
+            mensaje: "Faltan datos para crear la reseña"
+        });
+
+    }
+
+    if (calificacion < 1 || calificacion > 5) {
+
+        return res.status(400).json({
+            ok: false,
+            mensaje: "La calificación debe estar entre 1 y 5"
+        });
+
+    }
+
+    const sql = `
+        INSERT INTO reseñas
+        (usuario_id, producto_id, calificacion, comentario)
+        VALUES (?, ?, ?, ?)
+    `;
+
+    conexion.query(
+        sql,
+        [usuario_id, producto_id, calificacion, comentario || ""],
+        (err) => {
+
+            if (err) {
+
+                if (err.code === "ER_DUP_ENTRY") {
+
+                    return res.json({
+                        ok: false,
+                        mensaje: "Ya has calificado este producto"
+                    });
+
+                }
+
+                console.log(err);
+
+                return res.status(500).json({
+                    ok: false,
+                    mensaje: "No se pudo guardar la reseña"
+                });
+
+            }
+
+            res.json({
+                ok: true,
+                mensaje: "Reseña guardada correctamente"
+            });
+
+        }
+    );
+
+});
+
+
+// Eliminar una reseña
+app.delete(["/reseñas/:id", "/resenas/:id", encodeURI("/reseñas/:id")], (req, res) => {
+
+    const idReseña = req.params.id;
+
+    const sql = `
+        DELETE FROM reseñas
+        WHERE id = ?
+    `;
+
+    conexion.query(sql, [idReseña], (err) => {
+
+        if (err) {
+
+            console.log(err);
+
+            return res.status(500).json({
+                ok: false,
+                mensaje: "No se pudo eliminar la reseña"
+            });
+
+        }
+
+        res.json({
+            ok: true,
+            mensaje: "Reseña eliminada correctamente"
+        });
+
+    });
+
+});
 // Agregar al carrito
 app.post("/carrito/agregar", (req, res) => {
 
