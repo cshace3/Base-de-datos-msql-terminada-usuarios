@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administrador - Polaris</title>
+    <link rel="stylesheet" href="/css/styleadmin.css">
+</head>
+<body>
+
+    <!-- ENCABEZADO -->
+    <header class="admin-header">
+        <h1>Panel de Administrador</h1>
+        <div class="admin-info">
+            <span id="nombre-admin">Administrador</span>
+            <button onclick="cerrarSesion()">Cerrar sesión</button>
+        </div>
+    </header>
+
+    <!-- NOTIFICACIONES Y ALERTAS -->
+    <div id="admin-toast" class="admin-toast hidden"></div>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="admin-container">
+
+        <h2>Administración de la tienda</h2>
+        <p class="descripcion">
+            Desde este panel puedes administrar los productos, controlar el inventario y consultar los usuarios registrados.
+        </p>
+
+        <!-- TARJETAS DE NAVEGACIÓN RÁPIDA -->
+        <section class="admin-grid">
+
+            <div class="admin-card" onclick="cambiarTab('productos')">
+                <div class="icono">📦</div>
+                <h3>Gestionar productos</h3>
+                <p>Consulta, agrega, edita y elimina los productos disponibles en la tienda.</p>
+                <button type="button">Ver Productos</button>
+            </div>
+
+            <div class="admin-card" onclick="cambiarTab('usuarios')">
+                <div class="icono">👥</div>
+                <h3>Usuarios</h3>
+                <p>Consulta los usuarios registrados, modifica sus roles y gestiona accesos.</p>
+                <button type="button">Ver Usuarios</button>
+            </div>
+
+            <div class="admin-card" onclick="cambiarTab('stock')">
+                <div class="icono">📊</div>
+                <h3>Control de stock</h3>
+                <p>Consulta y actualiza la cantidad de inventario disponible de cada producto.</p>
+                <button type="button">Ver Stock</button>
+            </div>
+
+        </section>
+
+        <!-- NAVEGACIÓN POR PESTAÑAS -->
+        <nav class="admin-tabs">
+            <button id="tab-btn-productos" class="tab-btn active" onclick="cambiarTab('productos')">
+                📦 Productos
+            </button>
+            <button id="tab-btn-usuarios" class="tab-btn" onclick="cambiarTab('usuarios')">
+                👥 Usuarios
+            </button>
+            <button id="tab-btn-stock" class="tab-btn" onclick="cambiarTab('stock')">
+                📊 Control de Stock
+            </button>
+        </nav>
+
+        <!-- VISTA DE PRODUCTOS -->
+        <section id="tab-productos" class="tab-content active">
+            <div class="tab-header">
+                <h3>Inventario de Productos</h3>
+                <button class="btn-primary" onclick="abrirModalAgregarProducto()">
+                    ➕ Agregar Producto
+                </button>
+            </div>
+            <div class="table-responsive">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Imagen</th>
+                            <th>Nombre</th>
+                            <th>Descripción</th>
+                            <th>Precio</th>
+                            <th>Stock</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-productos-body">
+                        <tr><td colspan="7" class="loading">Cargando productos...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- VISTA DE USUARIOS -->
+        <section id="tab-usuarios" class="tab-content">
+            <div class="tab-header">
+                <h3>Usuarios Registrados</h3>
+            </div>
+            <div class="table-responsive">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Usuario</th>
+                            <th>Correo</th>
+                            <th>Rol</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-usuarios-body">
+                        <tr><td colspan="5" class="loading">Cargando usuarios...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- VISTA DE STOCK -->
+        <section id="tab-stock" class="tab-content">
+            <div class="tab-header">
+                <h3>Control de Inventario y Stock</h3>
+            </div>
+            <div class="table-responsive">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Producto</th>
+                            <th>Stock Disponible</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-stock-body">
+                        <tr><td colspan="5" class="loading">Cargando stock...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODAL PRODUCTO (AGREGAR / EDITAR) -->
+    <div id="modal-producto" class="modal-overlay hidden">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="modal-producto-titulo">Agregar Producto</h3>
+                <button class="btn-close" onclick="cerrarModal('modal-producto')">&times;</button>
+            </div>
+            <form id="form-producto" onsubmit="guardarProducto(event)">
+                <input type="hidden" id="prod-id">
+                
+                <div class="form-group">
+                    <label for="prod-nombre">Nombre del Producto:</label>
+                    <input type="text" id="prod-nombre" required placeholder="Ej: Camiseta Oversize">
+                </div>
+
+                <div class="form-group">
+                    <label for="prod-descripcion">Descripción:</label>
+                    <textarea id="prod-descripcion" rows="3" required placeholder="Ej: Camiseta de algodón 100% estilo urbano"></textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="prod-precio">Precio ($):</label>
+                        <input type="number" id="prod-precio" step="0.01" min="0" required placeholder="Ej: 85000">
+                    </div>
+                    <div class="form-group">
+                        <label for="prod-stock">Stock Inicial:</label>
+                        <input type="number" id="prod-stock" min="0" required placeholder="Ej: 10">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="prod-imagen">Nombre de Archivo de Imagen:</label>
+                    <input type="text" id="prod-imagen" required placeholder="Ej: Banner.png o Camiseta manga corta.jpg">
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="cerrarModal('modal-producto')">Cancelar</button>
+                    <button type="submit" class="btn-primary">Guardar Producto</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL EDITAR USUARIO -->
+    <div id="modal-usuario" class="modal-overlay hidden">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Editar Usuario</h3>
+                <button class="btn-close" onclick="cerrarModal('modal-usuario')">&times;</button>
+            </div>
+            <form id="form-usuario" onsubmit="guardarUsuario(event)">
+                <input type="hidden" id="user-id">
+
+                <div class="form-group">
+                    <label for="user-nombre">Nombre de Usuario:</label>
+                    <input type="text" id="user-nombre" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="user-correo">Correo Electrónico:</label>
+                    <input type="email" id="user-correo" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="user-rol">Rol:</label>
+                    <select id="user-rol" required>
+                        <option value="cliente">Cliente</option>
+                        <option value="admin">Administrador</option>
+                    </select>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="cerrarModal('modal-usuario')">Cancelar</button>
+                    <button type="submit" class="btn-primary">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL EDITAR STOCK -->
+    <div id="modal-stock" class="modal-overlay hidden">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Actualizar Stock</h3>
+                <button class="btn-close" onclick="cerrarModal('modal-stock')">&times;</button>
+            </div>
+            <form id="form-stock" onsubmit="guardarStock(event)">
+                <input type="hidden" id="stock-prod-id">
+
+                <div class="form-group">
+                    <label>Producto:</label>
+                    <p id="stock-prod-nombre" class="font-bold"></p>
+                </div>
+
+                <div class="form-group">
+                    <label for="stock-cantidad">Cantidad en Inventario:</label>
+                    <input type="number" id="stock-cantidad" min="0" required>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="cerrarModal('modal-stock')">Cancelar</button>
+                    <button type="submit" class="btn-primary">Actualizar Stock</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL DE CONFIRMACIÓN DE ELIMINACIÓN -->
+    <div id="modal-confirmar" class="modal-overlay hidden">
+        <div class="modal-card modal-small">
+            <div class="modal-header">
+                <h3>Confirmar Eliminación</h3>
+                <button class="btn-close" onclick="cerrarModal('modal-confirmar')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmar-mensaje">¿Estás seguro de que deseas realizar esta eliminación?</p>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" onclick="cerrarModal('modal-confirmar')">Cancelar</button>
+                <button type="button" id="btn-confirmar-eliminar" class="btn-danger">Eliminar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/script.js"></script>
+</body>
+</html>

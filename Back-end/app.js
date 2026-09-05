@@ -5,18 +5,18 @@ const path = require("path");
 const app = express();
 const port = 8080;
 const conexion = mysql.createConnection({
-    host: "localhost",
-    user: "root",
-    password: "",
-    database: "polaris"
+  host: "localhost",
+  user: "root",
+  password: "",
+  database: "polaris",
 });
 
 conexion.connect((err) => {
-    if (err) {
-        console.log("Error al conectar:", err);
-        return;
-    }
-    console.log("Conectado a MySQL");
+  if (err) {
+    console.log("Error al conectar:", err);
+    return;
+  }
+  console.log("Conectado a MySQL");
 });
 
 // Archivos quietos
@@ -26,206 +26,588 @@ app.use("/img", express.static(path.join(__dirname, "../img")));
 app.use("/html", express.static(path.join(__dirname, "../html")));
 app.use(express.static(path.join(__dirname, "../html")));
 app.use(express.json());
-app.use((err, req, res, next) => {
-    if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
-        return res.status(400).json({ ok: false, error: 'JSON malformado' });
+
+// ===============================
+// PROTECCIÓN DE ADMINISTRADOR
+// ===============================
+
+function verificarAdmin(req, res, next) {
+  const usuarioId = req.headers["usuario-id"];
+
+  if (!usuarioId) {
+    return res.status(401).json({
+      ok: false,
+      mensaje: "No has iniciado sesión"
+    });
+  }
+
+  const sql = "SELECT rol FROM usuarios WHERE id = ?";
+
+  conexion.query(sql, [usuarioId], (err, resultado) => {
+    if (err) {
+      console.log(err);
+      return res.status(500).json({
+        ok: false,
+        mensaje: "Error al verificar permisos"
+      });
     }
+
+    if (resultado.length === 0) {
+      return res.status(401).json({
+        ok: false,
+        mensaje: "Usuario no encontrado"
+      });
+    }
+
+    if (resultado[0].rol !== "admin") {
+      return res.status(403).json({
+        ok: false,
+        mensaje: "No tienes permisos de administrador"
+      });
+    }
+
     next();
+  });
+}
+app.use((err, req, res, next) => {
+  if (err instanceof SyntaxError && err.status === 400 && "body" in err) {
+    return res.status(400).json({ ok: false, error: "JSON malformado" });
+  }
+  next();
 });
 
 // Página principal Registro
 app.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, "../html/Registri.html"));
+  res.sendFile(path.join(__dirname, "../html/Registri.html"));
 });
 app.get("/Registri.html", (req, res) => {
-    res.sendFile(path.join(__dirname, "../html/Registri.html"));
+  res.sendFile(path.join(__dirname, "../html/Registri.html"));
 });
 app.get("/inicio.html", (req, res) => {
-    res.sendFile(path.join(__dirname, "../html/inicio.html"));
+  res.sendFile(path.join(__dirname, "../html/inicio.html"));
 });
 app.get("/Productos.html", (req, res) => {
-    res.sendFile(path.join(__dirname, "../html/Productos.html"));
+  res.sendFile(path.join(__dirname, "../html/Productos.html"));
 });
 app.get("/detalleproducto.html", (req, res) => {
-    res.sendFile(path.join(__dirname, "../html/detalleproducto.html"));
+  res.sendFile(path.join(__dirname, "../html/detalleproducto.html"));
 });
 app.get("/contacto.html", (req, res) => {
-    res.sendFile(path.join(__dirname, "../html/contacto.html"));
+  res.sendFile(path.join(__dirname, "../html/contacto.html"));
 });
 app.get("/Actualizar.html", (req, res) => {
-    res.sendFile(path.join(__dirname, "../html/Actualizar.html"));
+  res.sendFile(path.join(__dirname, "../html/Actualizar.html"));
 });
 app.get("/perfil.html", (req, res) => {
-    res.sendFile(path.join(__dirname, "../html/perfil.html"));
+  res.sendFile(path.join(__dirname, "../html/perfil.html"));
 });
 app.get("/favoritos.html", (req, res) => {
-    res.sendFile(path.join(__dirname, "../html/favoritos.html"));
+  res.sendFile(path.join(__dirname, "../html/favoritos.html"));
 });
 app.post("/registro", (req, res) => {
+  const { usuario, correo, contraseña } = req.body;
 
-    const { usuario, correo, contraseña } = req.body;
+  const sql =
+    "INSERT INTO usuarios (usuario, correo, contraseña) VALUES (?, ?, ?)";
 
-    const sql = "INSERT INTO usuarios (usuario, correo, contraseña) VALUES (?, ?, ?)";
+  conexion.query(sql, [usuario, correo, contraseña], (err, resultado) => {
+    if (err) {
+      console.log(err);
+      return res.json({ ok: false });
+    }
 
-    conexion.query(sql, [usuario, correo, contraseña], (err, resultado) => {
-
-        if (err) {
-            console.log(err);
-            return res.json({ ok: false });
-        }
-
-        res.json({ ok: true });
-
-    });
-
+    res.json({ ok: true });
+  });
 });
 //Login
 app.post("/login", (req, res) => {
+  const { usuario, correo, contraseña } = req.body;
 
-    const { usuario, correo, contraseña } = req.body;
+  const sql =
+    "SELECT * FROM usuarios WHERE usuario=? AND correo=? AND contraseña=?";
 
-    const sql = "SELECT * FROM usuarios WHERE usuario=? AND correo=? AND contraseña=?";
+  conexion.query(sql, [usuario, correo, contraseña], (err, resultado) => {
+    if (err) {
+      console.log(err);
+      return res.json({ ok: false });
+    }
 
-    conexion.query(sql, [usuario, correo, contraseña], (err, resultado) => {
+    if (resultado.length > 0) {
+      console.log("Usuario encontrado:", resultado[0]);
 
-        if (err) {
-            console.log(err);
-            return res.json({ ok: false });
-        }
-
-        if (resultado.length > 0) {
-
-            console.log("Usuario encontrado:", resultado[0]);
-
-            res.json({
-                ok: true,
-                id_usuario: resultado[0].id,
-                usuario: resultado[0].usuario
-            });
-
-        } else {
-
-            res.json({ ok: false });
-
-        }
-
-    });
-
+      res.json({
+        ok: true,
+        id_usuario: resultado[0].id,
+        usuario: resultado[0].usuario,
+        rol: resultado[0].rol,
+      });
+    } else {
+      res.json({ ok: false });
+    }
+  });
 });
 //Los usuarios
 app.get("/usuarios", (req, res) => {
+  const sql = "SELECT * FROM usuarios";
 
-    const sql = "SELECT * FROM usuarios";
+  conexion.query(sql, (err, resultado) => {
+    if (err) {
+      console.log(err);
+      return res.json({ ok: false });
+    }
 
-    conexion.query(sql, (err, resultado) => {
-
-        if (err) {
-            console.log(err);
-            return res.json({ ok: false });
-        }
-
-        res.json(resultado);
-
-    });
-
+    res.json(resultado);
+  });
 });
+// ===============================
+// ADMIN - VER USUARIOS
+// ===============================
+
+app.get("/admin/usuarios", verificarAdmin, (req, res) => {
+  const sql = `
+    SELECT id, usuario, correo, rol
+    FROM usuarios
+    ORDER BY id DESC
+  `;
+
+  conexion.query(sql, (err, resultado) => {
+    if (err) {
+      console.log("Error al consultar usuarios:", err);
+
+      return res.status(500).json({
+        ok: false,
+        mensaje: "Error al obtener los usuarios"
+      });
+    }
+
+    res.json({
+      ok: true,
+      usuarios: resultado
+    });
+  });
+});
+
+// ===============================
+// ADMIN - EDITAR USUARIO
+// ===============================
+app.put("/admin/usuarios/:id", verificarAdmin, (req, res) => {
+  const id = req.params.id;
+  const { usuario, correo, rol } = req.body;
+
+  if (!usuario || !correo || !rol) {
+    return res.status(400).json({
+      ok: false,
+      mensaje: "Todos los campos son obligatorios"
+    });
+  }
+
+  const sql = `
+    UPDATE usuarios
+    SET usuario = ?, correo = ?, rol = ?
+    WHERE id = ?
+  `;
+
+  conexion.query(sql, [usuario, correo, rol, id], (err, resultado) => {
+    if (err) {
+      console.log("Error al editar usuario:", err);
+      return res.status(500).json({
+        ok: false,
+        mensaje: "No se pudo editar el usuario"
+      });
+    }
+
+    if (resultado.affectedRows === 0) {
+      return res.status(404).json({
+        ok: false,
+        mensaje: "Usuario no encontrado"
+      });
+    }
+
+    res.json({
+      ok: true,
+      mensaje: "Usuario actualizado correctamente"
+    });
+  });
+});
+
+// ===============================
+// ADMIN - ELIMINAR USUARIO
+// ===============================
+app.delete("/admin/usuarios/:id", verificarAdmin, (req, res) => {
+  const id = req.params.id;
+  const adminId = req.headers["usuario-id"];
+
+  if (String(id) === String(adminId)) {
+    return res.status(400).json({
+      ok: false,
+      mensaje: "No puedes eliminar tu propia cuenta de administrador"
+    });
+  }
+
+  const sql = "DELETE FROM usuarios WHERE id = ?";
+
+  conexion.query(sql, [id], (err, resultado) => {
+    if (err) {
+      console.log("Error al eliminar usuario:", err);
+      return res.status(500).json({
+        ok: false,
+        mensaje: "No se pudo eliminar el usuario"
+      });
+    }
+
+    if (resultado.affectedRows === 0) {
+      return res.status(404).json({
+        ok: false,
+        mensaje: "Usuario no encontrado"
+      });
+    }
+
+    res.json({
+      ok: true,
+      mensaje: "Usuario eliminado correctamente"
+    });
+  });
+});
+
+//Pefil
 app.get("/perfil/:id", (req, res) => {
+  const id = req.params.id;
 
-    const id = req.params.id;
-
-    const sql = `
+  const sql = `
         SELECT id, usuario, correo
         FROM usuarios
         WHERE id = ?
     `;
 
-    conexion.query(sql, [id], (err, resultado) => {
+  conexion.query(sql, [id], (err, resultado) => {
+    if (err) {
+      console.log(err);
+      return res.status(500).json({
+        ok: false,
+        mensaje: "Error al consultar el perfil",
+      });
+    }
 
-        if (err) {
-            console.log(err);
-            return res.status(500).json({
-                ok: false,
-                mensaje: "Error al consultar el perfil"
-            });
-        }
+    if (resultado.length === 0) {
+      return res.status(404).json({
+        ok: false,
+        mensaje: "Usuario no encontrado",
+      });
+    }
 
-        if (resultado.length === 0) {
-            return res.status(404).json({
-                ok: false,
-                mensaje: "Usuario no encontrado"
-            });
-        }
-
-        res.json({
-            ok: true,
-            id_usuario: resultado[0].id,
-            usuario: resultado[0].usuario,
-            correo: resultado[0].correo
-        });
-
+    res.json({
+      ok: true,
+      id_usuario: resultado[0].id,
+      usuario: resultado[0].usuario,
+      correo: resultado[0].correo,
     });
-
+  });
 });
 // Los productos
 app.get("/productos", (req, res) => {
+  const { buscar } = req.query;
 
-    const { buscar } = req.query;
+  let sql = "SELECT * FROM productos";
+  let params = [];
 
-    let sql = "SELECT * FROM productos";
-    let params = [];
+  if (buscar) {
+    sql = "SELECT * FROM productos WHERE nombre LIKE ? OR descripcion LIKE ?";
+    const termino = `%${buscar}%`;
+    params = [termino, termino];
+  }
 
-    if (buscar) {
-        sql = "SELECT * FROM productos WHERE nombre LIKE ? OR descripcion LIKE ?";
-        const termino = `%${buscar}%`;
-        params = [termino, termino];
+  conexion.query(sql, params, (err, resultado) => {
+    if (err) {
+      console.log("Error al consultar productos:", err);
+      return res.status(500).json({
+        ok: false,
+        mensaje: "Error al obtener los productos",
+      });
     }
 
-    conexion.query(sql, params, (err, resultado) => {
+    res.json(resultado);
+  });
+});
+// ===============================
+// ADMIN - GESTIONAR PRODUCTOS
+// ===============================
 
-        if (err) {
-            console.log("Error al consultar productos:", err);
-            return res.status(500).json({
-                ok: false,
-                mensaje: "Error al obtener los productos"
-            });
-        }
+app.get("/admin/productos", verificarAdmin, (req, res) => {
 
-        res.json(resultado);
+  const sql = `
+    SELECT id, nombre, descripcion, precio, imagen, stock
+    FROM productos
+    ORDER BY id DESC
+  `;
 
+  conexion.query(sql, (err, resultado) => {
+
+    if (err) {
+      console.log("Error al consultar productos:", err);
+
+      return res.status(500).json({
+        ok: false,
+        mensaje: "Error al obtener los productos"
+      });
+    }
+
+    res.json({
+      ok: true,
+      productos: resultado
     });
+
+  });
 
 });
+// ===============================
+// ADMIN - AGREGAR PRODUCTO
+// ===============================
+
+app.post("/admin/productos", verificarAdmin, (req, res) => {
+
+  const {
+    nombre,
+    descripcion,
+    precio,
+    imagen,
+    stock
+  } = req.body;
+
+  if (!nombre || !descripcion || !precio || !imagen || stock === undefined) {
+    return res.status(400).json({
+      ok: false,
+      mensaje: "Todos los campos son obligatorios"
+    });
+  }
+
+  const sql = `
+    INSERT INTO productos
+    (nombre, descripcion, precio, imagen, stock)
+    VALUES (?, ?, ?, ?, ?)
+  `;
+
+  conexion.query(
+    sql,
+    [nombre, descripcion, precio, imagen, stock],
+    (err, resultado) => {
+
+      if (err) {
+        console.log("Error al agregar producto:", err);
+
+        return res.status(500).json({
+          ok: false,
+          mensaje: "No se pudo agregar el producto"
+        });
+      }
+
+      res.json({
+        ok: true,
+        mensaje: "Producto agregado correctamente",
+        id: resultado.insertId
+      });
+
+    }
+  );
+
+});
+// ===============================
+// ADMIN - EDITAR PRODUCTO
+// ===============================
+
+app.put("/admin/productos/:id", verificarAdmin, (req, res) => {
+
+  const id = req.params.id;
+
+  const {
+    nombre,
+    descripcion,
+    precio,
+    imagen,
+    stock
+  } = req.body;
+
+  if (!nombre || !descripcion || !precio || !imagen || stock === undefined) {
+    return res.status(400).json({
+      ok: false,
+      mensaje: "Todos los campos son obligatorios"
+    });
+  }
+
+  const sql = `
+    UPDATE productos
+    SET nombre = ?,
+        descripcion = ?,
+        precio = ?,
+        imagen = ?,
+        stock = ?
+    WHERE id = ?
+  `;
+
+  conexion.query(
+    sql,
+    [nombre, descripcion, precio, imagen, stock, id],
+    (err, resultado) => {
+
+      if (err) {
+        console.log("Error al editar producto:", err);
+
+        return res.status(500).json({
+          ok: false,
+          mensaje: "No se pudo editar el producto"
+        });
+      }
+
+      if (resultado.affectedRows === 0) {
+        return res.status(404).json({
+          ok: false,
+          mensaje: "Producto no encontrado"
+        });
+      }
+
+      res.json({
+        ok: true,
+        mensaje: "Producto actualizado correctamente"
+      });
+
+    }
+  );
+
+});
+// ===============================
+// ADMIN - ELIMINAR PRODUCTO
+// ===============================
+
+app.delete("/admin/productos/:id", verificarAdmin, (req, res) => {
+
+  const id = req.params.id;
+
+  const sql = "DELETE FROM productos WHERE id = ?";
+
+  conexion.query(sql, [id], (err, resultado) => {
+
+    if (err) {
+      console.log("Error al eliminar producto:", err);
+
+      return res.status(500).json({
+        ok: false,
+        mensaje: "No se pudo eliminar el producto"
+      });
+    }
+
+    if (resultado.affectedRows === 0) {
+      return res.status(404).json({
+        ok: false,
+        mensaje: "Producto no encontrado"
+      });
+    }
+
+    res.json({
+      ok: true,
+      mensaje: "Producto eliminado correctamente"
+    });
+
+  });
+
+});
+// ===============================
+// ADMIN - VER STOCK
+// ===============================
+
+app.get("/admin/stock", verificarAdmin, (req, res) => {
+
+  const sql = `
+    SELECT id, nombre, stock
+    FROM productos
+    ORDER BY stock ASC
+  `;
+
+  conexion.query(sql, (err, resultado) => {
+
+    if (err) {
+      console.log("Error al consultar stock:", err);
+
+      return res.status(500).json({
+        ok: false,
+        mensaje: "No se pudo consultar el stock"
+      });
+    }
+
+    res.json({
+      ok: true,
+      productos: resultado
+    });
+
+  });
+
+});
+
+// ===============================
+// ADMIN - ACTUALIZAR STOCK
+// ===============================
+app.put("/admin/stock/:id", verificarAdmin, (req, res) => {
+  const id = req.params.id;
+  const { stock } = req.body;
+
+  if (stock === undefined || stock === null || Number(stock) < 0) {
+    return res.status(400).json({
+      ok: false,
+      mensaje: "Proporcione una cantidad de stock válida"
+    });
+  }
+
+  const sql = "UPDATE productos SET stock = ? WHERE id = ?";
+
+  conexion.query(sql, [Number(stock), id], (err, resultado) => {
+    if (err) {
+      console.log("Error al actualizar stock:", err);
+      return res.status(500).json({
+        ok: false,
+        mensaje: "No se pudo actualizar el stock"
+      });
+    }
+
+    if (resultado.affectedRows === 0) {
+      return res.status(404).json({
+        ok: false,
+        mensaje: "Producto no encontrado"
+      });
+    }
+
+    res.json({
+      ok: true,
+      mensaje: "Stock actualizado correctamente"
+    });
+  });
+});
+
 // Obtener un producto por su ID
 app.get("/productos/:id", (req, res) => {
+  const id = req.params.id;
 
-    const id = req.params.id;
+  const sql = "SELECT * FROM productos WHERE id = ?";
 
-    const sql = "SELECT * FROM productos WHERE id = ?";
+  conexion.query(sql, [id], (err, resultado) => {
+    if (err) {
+      console.log("Error al consultar el producto:", err);
 
-    conexion.query(sql, [id], (err, resultado) => {
+      return res.status(500).json({
+        ok: false,
+        mensaje: "Error al obtener el producto",
+      });
+    }
 
-        if (err) {
-            console.log("Error al consultar el producto:", err);
+    if (resultado.length === 0) {
+      return res.status(404).json({
+        ok: false,
+        mensaje: "Producto no encontrado",
+      });
+    }
 
-            return res.status(500).json({
-                ok: false,
-                mensaje: "Error al obtener el producto"
-            });
-        }
-
-        if (resultado.length === 0) {
-            return res.status(404).json({
-                ok: false,
-                mensaje: "Producto no encontrado"
-            });
-        }
-
-        res.json({
-            ok: true,
-            producto: resultado[0]
-        });
-
+    res.json({
+      ok: true,
+      producto: resultado[0],
     });
+  });
 
 });
 // ===============================
@@ -234,10 +616,9 @@ app.get("/productos/:id", (req, res) => {
 
 // Obtener favoritos de un usuario
 app.get("/favoritos/:usuario_id", (req, res) => {
+  const usuarioId = req.params.usuario_id;
 
-    const usuarioId = req.params.usuario_id;
-
-    const sql = `
+  const sql = `
         SELECT
             favoritos.id,
             favoritos.producto_id,
@@ -252,126 +633,102 @@ app.get("/favoritos/:usuario_id", (req, res) => {
         ORDER BY favoritos.fecha_agregado DESC
     `;
 
-    conexion.query(sql, [usuarioId], (err, resultado) => {
+  conexion.query(sql, [usuarioId], (err, resultado) => {
+    if (err) {
+      console.log("Error al obtener favoritos:", err);
 
-        if (err) {
-            console.log("Error al obtener favoritos:", err);
+      return res.status(500).json({
+        ok: false,
+        mensaje: "Error al obtener los favoritos",
+      });
+    }
 
-            return res.status(500).json({
-                ok: false,
-                mensaje: "Error al obtener los favoritos"
-            });
-        }
-
-        res.json({
-            ok: true,
-            favoritos: resultado
-        });
-
+    res.json({
+      ok: true,
+      favoritos: resultado,
     });
-
+  });
 });
-
 
 // Agregar producto a favoritos
 app.post("/favoritos/agregar", (req, res) => {
+  const { usuario_id, producto_id } = req.body;
 
-    const { usuario_id, producto_id } = req.body;
+  if (!usuario_id || !producto_id) {
+    return res.status(400).json({
+      ok: false,
+      mensaje: "Faltan datos del usuario o del producto",
+    });
+  }
 
-    if (!usuario_id || !producto_id) {
-
-        return res.status(400).json({
-            ok: false,
-            mensaje: "Faltan datos del usuario o del producto"
-        });
-
-    }
-
-    const sql = `
+  const sql = `
         INSERT INTO favoritos
         (usuario_id, producto_id)
         VALUES (?, ?)
     `;
 
-    conexion.query(
-        sql,
-        [usuario_id, producto_id],
-        (err) => {
+  conexion.query(sql, [usuario_id, producto_id], (err) => {
+    if (err) {
+      if (err.code === "ER_DUP_ENTRY") {
+        return res.json({
+          ok: false,
+          mensaje: "El producto ya está en favoritos",
+        });
+      }
 
-            if (err) {
+      console.log(err);
 
-                if (err.code === "ER_DUP_ENTRY") {
+      return res.status(500).json({
+        ok: false,
+        mensaje: "No se pudo agregar a favoritos",
+      });
+    }
 
-                    return res.json({
-                        ok: false,
-                        mensaje: "El producto ya está en favoritos"
-                    });
-
-                }
-
-                console.log(err);
-
-                return res.status(500).json({
-                    ok: false,
-                    mensaje: "No se pudo agregar a favoritos"
-                });
-
-            }
-
-            res.json({
-                ok: true,
-                mensaje: "Producto agregado a favoritos"
-            });
-
-        }
-    );
-
+    res.json({
+      ok: true,
+      mensaje: "Producto agregado a favoritos",
+    });
+  });
 });
-
 
 // Eliminar producto de favoritos
 app.delete("/favoritos/:usuario_id/:producto_id", (req, res) => {
+  const usuarioId = req.params.usuario_id;
+  const productoId = req.params.producto_id;
 
-    const usuarioId = req.params.usuario_id;
-    const productoId = req.params.producto_id;
-
-    const sql = `
+  const sql = `
         DELETE FROM favoritos
         WHERE usuario_id = ? AND producto_id = ?
     `;
 
-    conexion.query(
-        sql,
-        [usuarioId, productoId],
-        (err) => {
+  conexion.query(sql, [usuarioId, productoId], (err) => {
+    if (err) {
+      console.log(err);
 
-            if (err) {
+      return res.status(500).json({
+        ok: false,
+        mensaje: "No se pudo eliminar de favoritos",
+      });
+    }
 
-                console.log(err);
-
-                return res.status(500).json({
-                    ok: false,
-                    mensaje: "No se pudo eliminar de favoritos"
-                });
-
-            }
-
-            res.json({
-                ok: true,
-                mensaje: "Producto eliminado de favoritos"
-            });
-
-        }
-    );
-
+    res.json({
+      ok: true,
+      mensaje: "Producto eliminado de favoritos",
+    });
+  });
 });
 // ===============================
 // RESEÑAS Y CALIFICACIONES
 // ===============================
 
 // Obtener las reseñas de un producto
-app.get(["/reseñas/:producto_id", "/resenas/:producto_id", encodeURI("/reseñas/:producto_id")], (req, res) => {
-
+app.get(
+  [
+    "/reseñas/:producto_id",
+    "/resenas/:producto_id",
+    encodeURI("/reseñas/:producto_id"),
+  ],
+  (req, res) => {
     const productoId = req.params.producto_id;
 
     const sql = `
@@ -390,52 +747,41 @@ app.get(["/reseñas/:producto_id", "/resenas/:producto_id", encodeURI("/reseñas
     `;
 
     conexion.query(sql, [productoId], (err, resultado) => {
+      if (err) {
+        console.log("Error al obtener reseñas:", err);
 
-        if (err) {
-            console.log("Error al obtener reseñas:", err);
-
-            return res.status(500).json({
-                ok: false,
-                mensaje: "Error al obtener las reseñas"
-            });
-        }
-
-        res.json({
-            ok: true,
-            reseñas: resultado
+        return res.status(500).json({
+          ok: false,
+          mensaje: "Error al obtener las reseñas",
         });
+      }
 
+      res.json({
+        ok: true,
+        reseñas: resultado,
+      });
     });
-
-});
-
+  },
+);
 
 // Agregar una reseña
-app.post(["/reseñas/agregar", "/resenas/agregar", encodeURI("/reseñas/agregar")], (req, res) => {
-
-    const {
-        usuario_id,
-        producto_id,
-        calificacion,
-        comentario
-    } = req.body;
+app.post(
+  ["/reseñas/agregar", "/resenas/agregar", encodeURI("/reseñas/agregar")],
+  (req, res) => {
+    const { usuario_id, producto_id, calificacion, comentario } = req.body;
 
     if (!usuario_id || !producto_id || !calificacion) {
-
-        return res.status(400).json({
-            ok: false,
-            mensaje: "Faltan datos para crear la reseña"
-        });
-
+      return res.status(400).json({
+        ok: false,
+        mensaje: "Faltan datos para crear la reseña",
+      });
     }
 
     if (calificacion < 1 || calificacion > 5) {
-
-        return res.status(400).json({
-            ok: false,
-            mensaje: "La calificación debe estar entre 1 y 5"
-        });
-
+      return res.status(400).json({
+        ok: false,
+        mensaje: "La calificación debe estar entre 1 y 5",
+      });
     }
 
     const sql = `
@@ -445,44 +791,38 @@ app.post(["/reseñas/agregar", "/resenas/agregar", encodeURI("/reseñas/agregar"
     `;
 
     conexion.query(
-        sql,
-        [usuario_id, producto_id, calificacion, comentario || ""],
-        (err) => {
-
-            if (err) {
-
-                if (err.code === "ER_DUP_ENTRY") {
-
-                    return res.json({
-                        ok: false,
-                        mensaje: "Ya has calificado este producto"
-                    });
-
-                }
-
-                console.log(err);
-
-                return res.status(500).json({
-                    ok: false,
-                    mensaje: "No se pudo guardar la reseña"
-                });
-
-            }
-
-            res.json({
-                ok: true,
-                mensaje: "Reseña guardada correctamente"
+      sql,
+      [usuario_id, producto_id, calificacion, comentario || ""],
+      (err) => {
+        if (err) {
+          if (err.code === "ER_DUP_ENTRY") {
+            return res.json({
+              ok: false,
+              mensaje: "Ya has calificado este producto",
             });
+          }
 
+          console.log(err);
+
+          return res.status(500).json({
+            ok: false,
+            mensaje: "No se pudo guardar la reseña",
+          });
         }
+
+        res.json({
+          ok: true,
+          mensaje: "Reseña guardada correctamente",
+        });
+      },
     );
-
-});
-
+  },
+);
 
 // Eliminar una reseña
-app.delete(["/reseñas/:id", "/resenas/:id", encodeURI("/reseñas/:id")], (req, res) => {
-
+app.delete(
+  ["/reseñas/:id", "/resenas/:id", encodeURI("/reseñas/:id")],
+  (req, res) => {
     const idReseña = req.params.id;
 
     const sql = `
@@ -491,106 +831,85 @@ app.delete(["/reseñas/:id", "/resenas/:id", encodeURI("/reseñas/:id")], (req, 
     `;
 
     conexion.query(sql, [idReseña], (err) => {
+      if (err) {
+        console.log(err);
 
-        if (err) {
-
-            console.log(err);
-
-            return res.status(500).json({
-                ok: false,
-                mensaje: "No se pudo eliminar la reseña"
-            });
-
-        }
-
-        res.json({
-            ok: true,
-            mensaje: "Reseña eliminada correctamente"
+        return res.status(500).json({
+          ok: false,
+          mensaje: "No se pudo eliminar la reseña",
         });
+      }
 
+      res.json({
+        ok: true,
+        mensaje: "Reseña eliminada correctamente",
+      });
     });
-
-});
+  },
+);
 // Agregar al carrito
 app.post("/carrito/agregar", (req, res) => {
+  console.log("Datos recibidos para carrito:", req.body);
 
-    console.log("Datos recibidos para carrito:", req.body);
+  const { usuario_id, producto_id, cantidad } = req.body;
 
-    const { usuario_id, producto_id, cantidad } = req.body;
+  // Verificar que se recibieron los datos
+  if (!usuario_id || !producto_id) {
+    return res.status(400).json({
+      ok: false,
+      mensaje: "Faltan datos del usuario o del producto",
+    });
+  }
 
-    // Verificar que se recibieron los datos
-    if (!usuario_id || !producto_id) {
-        return res.status(400).json({
-            ok: false,
-            mensaje: "Faltan datos del usuario o del producto"
-        });
+  const cantidadFinal = cantidad || 1;
+
+  // Buscar si el usuario ya tiene un carrito
+  const sqlCarrito = "SELECT id FROM carrito WHERE usuario_id = ?";
+
+  conexion.query(sqlCarrito, [usuario_id], (err, resultadoCarrito) => {
+    if (err) {
+      console.log(err);
+      return res.status(500).json({
+        ok: false,
+        mensaje: "Error al buscar el carrito",
+      });
     }
 
-    const cantidadFinal = cantidad || 1;
+    // Si el usuario no tiene carrito se crea
+    if (resultadoCarrito.length === 0) {
+      const sqlCrearCarrito =
+        "INSERT INTO carrito (usuario_id, fecha_creacion) VALUES (?, NOW())";
 
-    // Buscar si el usuario ya tiene un carrito
-    const sqlCarrito = "SELECT id FROM carrito WHERE usuario_id = ?";
-
-    conexion.query(sqlCarrito, [usuario_id], (err, resultadoCarrito) => {
-
-        if (err) {
+      conexion.query(
+        sqlCrearCarrito,
+        [usuario_id],
+        (err, resultadoNuevoCarrito) => {
+          if (err) {
             console.log(err);
             return res.status(500).json({
-                ok: false,
-                mensaje: "Error al buscar el carrito"
+              ok: false,
+              mensaje: "No se pudo crear el carrito",
             });
-        }
+          }
 
-        // Si el usuario no tiene carrito se crea
-        if (resultadoCarrito.length === 0) {
+          const carritoId = resultadoNuevoCarrito.insertId;
 
-            const sqlCrearCarrito =
-                "INSERT INTO carrito (usuario_id, fecha_creacion) VALUES (?, NOW())";
+          agregarProductoAlCarrito(carritoId, producto_id, cantidadFinal, res);
+        },
+      );
+    } else {
+      // El usuario ya tiene carrito
+      const carritoId = resultadoCarrito[0].id;
 
-            conexion.query(
-                sqlCrearCarrito,
-                [usuario_id],
-                (err, resultadoNuevoCarrito) => {
-
-                    if (err) {
-                        console.log(err);
-                        return res.status(500).json({
-                            ok: false,
-                            mensaje: "No se pudo crear el carrito"
-                        });
-                    }
-
-                    const carritoId = resultadoNuevoCarrito.insertId;
-
-                    agregarProductoAlCarrito(
-                        carritoId,
-                        producto_id,
-                        cantidadFinal,
-                        res
-                    );
-                }
-            );
-
-        } else {
-
-            // El usuario ya tiene carrito
-            const carritoId = resultadoCarrito[0].id;
-
-            agregarProductoAlCarrito(
-                carritoId,
-                producto_id,
-                cantidadFinal,
-                res
-            );
-        }
-    });
+      agregarProductoAlCarrito(carritoId, producto_id, cantidadFinal, res);
+    }
+  });
 });
 //Buscar el carrito de un usuario
 app.get("/carrito/:usuario_id", (req, res) => {
+  const usuarioId = req.params.usuario_id;
 
-    const usuarioId = req.params.usuario_id;
-
-    const sql = `
+  const sql = `
         SELECT 
             detalle_carrito.id,
             detalle_carrito.producto_id,
@@ -607,225 +926,191 @@ app.get("/carrito/:usuario_id", (req, res) => {
         WHERE carrito.usuario_id = ?
     `;
 
-    conexion.query(sql, [usuarioId], (err, resultado) => {
+  conexion.query(sql, [usuarioId], (err, resultado) => {
+    if (err) {
+      console.log(err);
 
-        if (err) {
-            console.log(err);
+      return res.status(500).json({
+        ok: false,
+        mensaje: "Error al cargar el carrito",
+      });
+    }
 
-            return res.status(500).json({
-                ok: false,
-                mensaje: "Error al cargar el carrito"
-            });
-        }
-
-        res.json({
-            ok: true,
-            carrito: resultado
-        });
-
+    res.json({
+      ok: true,
+      carrito: resultado,
     });
-
+  });
 });
 // Actualizar cantidad de un producto en el carrito
 app.put("/carrito/cantidad/:id", (req, res) => {
+  const idDetalle = req.params.id;
+  const { cantidad } = req.body;
 
-    const idDetalle = req.params.id;
-    const { cantidad } = req.body;
+  if (!cantidad || cantidad < 1) {
+    return res.status(400).json({
+      ok: false,
+      mensaje: "Cantidad inválida",
+    });
+  }
 
-    if (!cantidad || cantidad < 1) {
-        return res.status(400).json({
-            ok: false,
-            mensaje: "Cantidad inválida"
-        });
-    }
-
-    const sql = `
+  const sql = `
         UPDATE detalle_carrito
         SET cantidad = ?
         WHERE id = ?
     `;
 
-    conexion.query(sql, [cantidad, idDetalle], (err) => {
+  conexion.query(sql, [cantidad, idDetalle], (err) => {
+    if (err) {
+      console.log(err);
 
-        if (err) {
-            console.log(err);
+      return res.status(500).json({
+        ok: false,
+        mensaje: "No se pudo actualizar la cantidad",
+      });
+    }
 
-            return res.status(500).json({
-                ok: false,
-                mensaje: "No se pudo actualizar la cantidad"
-            });
-        }
-
-        res.json({
-            ok: true,
-            mensaje: "Cantidad actualizada"
-        });
-
+    res.json({
+      ok: true,
+      mensaje: "Cantidad actualizada",
     });
-
+  });
 });
 // Eliminar producto del carrito
 app.delete("/carrito/producto/:id", (req, res) => {
+  const idDetalle = req.params.id;
 
-    const idDetalle = req.params.id;
-
-    const sql = `
+  const sql = `
         DELETE FROM detalle_carrito
         WHERE id = ?
     `;
 
-    conexion.query(sql, [idDetalle], (err) => {
+  conexion.query(sql, [idDetalle], (err) => {
+    if (err) {
+      console.log(err);
 
-        if (err) {
-            console.log(err);
+      return res.status(500).json({
+        ok: false,
+        mensaje: "No se pudo eliminar el producto",
+      });
+    }
 
-            return res.status(500).json({
-                ok: false,
-                mensaje: "No se pudo eliminar el producto"
-            });
-        }
-
-        res.json({
-            ok: true,
-            mensaje: "Producto eliminado del carrito"
-        });
-
+    res.json({
+      ok: true,
+      mensaje: "Producto eliminado del carrito",
     });
-
+  });
 });
 //Agregar al carrito
-function agregarProductoAlCarrito(
-    carritoId,
-    productoId,
-    cantidad,
-    res
-) {
-
-    // Comprobar si el producto ya está en el carrito
-    const sqlBuscarProducto = `
+function agregarProductoAlCarrito(carritoId, productoId, cantidad, res) {
+  // Comprobar si el producto ya está en el carrito
+  const sqlBuscarProducto = `
         SELECT id, cantidad
         FROM detalle_carrito
         WHERE carrito_id = ? AND producto_id = ?
     `;
 
-    conexion.query(
-        sqlBuscarProducto,
-        [carritoId, productoId],
-        (err, resultado) => {
+  conexion.query(
+    sqlBuscarProducto,
+    [carritoId, productoId],
+    (err, resultado) => {
+      if (err) {
+        console.log(err);
+        return res.status(500).json({
+          ok: false,
+          mensaje: "Error al buscar el producto en el carrito",
+        });
+      }
 
-            if (err) {
-                console.log(err);
-                return res.status(500).json({
-                    ok: false,
-                    mensaje: "Error al buscar el producto en el carrito"
-                });
-            }
+      // Si ya existe se aumenta la cantidad
+      if (resultado.length > 0) {
+        const nuevaCantidad = resultado[0].cantidad + cantidad;
 
-            // Si ya existe se aumenta la cantidad
-            if (resultado.length > 0) {
-
-                const nuevaCantidad =
-                    resultado[0].cantidad + cantidad;
-
-                const sqlActualizar = `
+        const sqlActualizar = `
                     UPDATE detalle_carrito
                     SET cantidad = ?
                     WHERE id = ?
                 `;
 
-                conexion.query(
-                    sqlActualizar,
-                    [nuevaCantidad, resultado[0].id],
-                    (err) => {
+        conexion.query(
+          sqlActualizar,
+          [nuevaCantidad, resultado[0].id],
+          (err) => {
+            if (err) {
+              console.log(err);
+              return res.status(500).json({
+                ok: false,
+                mensaje: "No se pudo actualizar la cantidad",
+              });
+            }
 
-                        if (err) {
-                            console.log(err);
-                            return res.status(500).json({
-                                ok: false,
-                                mensaje: "No se pudo actualizar la cantidad"
-                            });
-                        }
-
-                        res.json({
-                            ok: true,
-                            mensaje: "Producto agregado al carrito"
-                        });
-                    }
-                );
-
-            } else {
-
-                // Si no existe se agrega
-                const sqlAgregar = `
+            res.json({
+              ok: true,
+              mensaje: "Producto agregado al carrito",
+            });
+          },
+        );
+      } else {
+        // Si no existe se agrega
+        const sqlAgregar = `
                     INSERT INTO detalle_carrito
                     (carrito_id, producto_id, cantidad)
                     VALUES (?, ?, ?)
                 `;
 
-                conexion.query(
-                    sqlAgregar,
-                    [carritoId, productoId, cantidad],
-                    (err) => {
+        conexion.query(sqlAgregar, [carritoId, productoId, cantidad], (err) => {
+          if (err) {
+            console.log(err);
+            return res.status(500).json({
+              ok: false,
+              mensaje: "No se pudo agregar el producto",
+            });
+          }
 
-                        if (err) {
-                            console.log(err);
-                            return res.status(500).json({
-                                ok: false,
-                                mensaje: "No se pudo agregar el producto"
-                            });
-                        }
-
-                        res.json({
-                            ok: true,
-                            mensaje: "Producto agregado al carrito"
-                        });
-                    }
-                );
-            }
-        }
-    );
+          res.json({
+            ok: true,
+            mensaje: "Producto agregado al carrito",
+          });
+        });
+      }
+    },
+  );
 }
 // Actualizar contraseña
 app.put("/actualizar-password", (req, res) => {
+  const { usuario, correo, actual, nueva } = req.body;
 
-    const { usuario, correo, actual, nueva } = req.body;
+  const sqlBuscar = "SELECT * FROM usuarios WHERE usuario = ? AND correo = ?";
 
-    const sqlBuscar = "SELECT * FROM usuarios WHERE usuario = ? AND correo = ?";
+  conexion.query(sqlBuscar, [usuario, correo], (err, resultado) => {
+    if (err) {
+      console.log(err);
+      return res.json({ mensaje: "Error del servidor" });
+    }
 
-    conexion.query(sqlBuscar, [usuario, correo], (err, resultado) => {
+    if (resultado.length === 0) {
+      return res.json({
+        mensaje: "El usuario o el correo son incorrectos",
+      });
+    }
 
-        if (err) {
-            console.log(err);
-            return res.json({ mensaje: "Error del servidor" });
-        }
+    if (resultado[0].contraseña !== actual) {
+      return res.json({ mensaje: "La contraseña actual es incorrecta" });
+    }
 
-        if (resultado.length === 0) {
-            return res.json({
-                mensaje: "El usuario o el correo son incorrectos"
-            });
-        }
+    const sqlActualizar = "UPDATE usuarios SET contraseña = ? WHERE correo = ?";
 
-        if (resultado[0].contraseña !== actual) {
-            return res.json({ mensaje: "La contraseña actual es incorrecta" });
-        }
+    conexion.query(sqlActualizar, [nueva, correo], (err) => {
+      if (err) {
+        console.log(err);
+        return res.json({ mensaje: "No se pudo actualizar la contraseña" });
+      }
 
-        const sqlActualizar = "UPDATE usuarios SET contraseña = ? WHERE correo = ?";
-
-        conexion.query(sqlActualizar, [nueva, correo], (err) => {
-
-            if (err) {
-                console.log(err);
-                return res.json({ mensaje: "No se pudo actualizar la contraseña" });
-            }
-
-            res.json({ mensaje: "Contraseña actualizada correctamente" });
-
-        });
-
+      res.json({ mensaje: "Contraseña actualizada correctamente" });
     });
-
+  });
 });
 
 app.listen(port, () => {
-    console.log(`Servidor en http://localhost:${port}`);
+  console.log(`Servidor en http://localhost:${port}`);
 });

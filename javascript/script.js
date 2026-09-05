@@ -103,13 +103,18 @@ async function iniciar(event) {
 
       localStorage.setItem("id_usuario", datos.id_usuario);
       localStorage.setItem("usuario", datos.usuario);
+      localStorage.setItem("rol", datos.rol);
 
       document.getElementById("mensaje").textContent =
         "Inicio de sesión exitoso";
       document.getElementById("mensaje").style.color = "green";
 
       setTimeout(() => {
-        window.location.href = "Productos.html";
+        if (datos.rol === "admin") {
+          window.location.href = "admin.html";
+        } else {
+          window.location.href = "Productos.html";
+        }
       }, 2000);
     } else {
       document.getElementById("mensaje").textContent =
@@ -1165,13 +1170,516 @@ async function eliminarResena(idReseña, productoId) {
     alert("Error de conexión al intentar eliminar la reseña.");
   }
 }
+// ===============================
+// ADMINISTRADOR (TABLAS Y MODALES SIN ALERT)
+// ===============================
 
-// Cerrar sesión del usuario
+// Notificaciones Toast para Admin
+function mostrarToastAdmin(mensaje, esExito = true) {
+  const toast = document.getElementById("admin-toast");
+  if (!toast) return;
+
+  toast.textContent = mensaje;
+  toast.className = `admin-toast ${esExito ? "exito" : "error"}`;
+
+  setTimeout(() => {
+    toast.className = "admin-toast hidden";
+  }, 3500);
+}
+
+function verificarAccesoAdmin() {
+  const rol = localStorage.getItem("rol");
+
+  if (rol !== "admin") {
+    mostrarToastAdmin("No tienes permisos para acceder al panel de administrador.", false);
+    setTimeout(() => {
+      window.location.href = "inicio.html";
+    }, 1500);
+    return false;
+  }
+
+  return true;
+}
+
+// Cambiar de Pestaña en Admin
+function cambiarTab(nombreTab) {
+  const tabs = ["productos", "usuarios", "stock"];
+  
+  tabs.forEach((tab) => {
+    const btn = document.getElementById(`tab-btn-${tab}`);
+    const sec = document.getElementById(`tab-${tab}`);
+    
+    if (btn && sec) {
+      if (tab === nombreTab) {
+        btn.classList.add("active");
+        sec.classList.add("active");
+      } else {
+        btn.classList.remove("active");
+        sec.classList.remove("active");
+      }
+    }
+  });
+
+  // Cargar datos según la pestaña activa
+  if (nombreTab === "productos") gestionarProductos();
+  if (nombreTab === "usuarios") verUsuarios();
+  if (nombreTab === "stock") verStock();
+}
+
+// Control de Modales
+let callbackEliminar = null;
+
+function cerrarModal(idModal) {
+  const modal = document.getElementById(idModal);
+  if (modal) {
+    modal.classList.add("hidden");
+  }
+}
+
+function abrirModalConfirmacion(mensaje, callback) {
+  const modal = document.getElementById("modal-confirmar");
+  const msgElement = document.getElementById("confirmar-mensaje");
+  const btnConfirmar = document.getElementById("btn-confirmar-eliminar");
+
+  if (!modal || !msgElement || !btnConfirmar) return;
+
+  msgElement.textContent = mensaje;
+  callbackEliminar = callback;
+
+  btnConfirmar.onclick = async () => {
+    if (callbackEliminar) {
+      await callbackEliminar();
+    }
+    cerrarModal("modal-confirmar");
+  };
+
+  modal.classList.remove("hidden");
+}
+
+// ===============================
+// VER & GESTIONAR USUARIOS
+// ===============================
+let usuariosGlobales = [];
+
+async function verUsuarios() {
+  if (!verificarAccesoAdmin()) return;
+
+  const tbody = document.getElementById("tabla-usuarios-body");
+  if (!tbody) return;
+
+  tbody.innerHTML = `<tr><td colspan="5" class="loading">Cargando usuarios...</td></tr>`;
+
+  const idUsuario = localStorage.getItem("id_usuario");
+
+  try {
+    const respuesta = await fetch("/admin/usuarios", {
+      method: "GET",
+      headers: { "usuario-id": idUsuario }
+    });
+    const datos = await respuesta.json();
+
+    if (!datos.ok) {
+      mostrarToastAdmin(datos.mensaje || "Error al obtener usuarios", false);
+      tbody.innerHTML = `<tr><td colspan="5" class="loading">Error al cargar usuarios.</td></tr>`;
+      return;
+    }
+
+    usuariosGlobales = datos.usuarios || [];
+
+    if (usuariosGlobales.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5" class="loading">No hay usuarios registrados.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = "";
+    usuariosGlobales.forEach((u) => {
+      const tr = document.createElement("tr");
+      const badgeRol = u.rol === "admin" ? "badge-admin" : "badge-cliente";
+
+      tr.innerHTML = `
+        <td><strong>#${u.id}</strong></td>
+        <td>${u.usuario}</td>
+        <td>${u.correo}</td>
+        <td><span class="badge ${badgeRol}">${u.rol}</span></td>
+        <td>
+          <div class="acciones-cell">
+            <button class="btn-edit" onclick="abrirModalEditarUsuario(${u.id})">✏️ Editar</button>
+            <button class="btn-delete" onclick="confirmarEliminarUsuario(${u.id}, '${u.usuario.replace(/'/g, "\\'")}')">🗑️ Eliminar</button>
+          </div>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  } catch (error) {
+    console.error("Error al cargar usuarios:", error);
+    mostrarToastAdmin("Error al conectar con el servidor", false);
+    tbody.innerHTML = `<tr><td colspan="5" class="loading">Error al conectar con el servidor.</td></tr>`;
+  }
+}
+
+function abrirModalEditarUsuario(id) {
+  const usuario = usuariosGlobales.find((u) => u.id === id);
+  if (!usuario) return;
+
+  document.getElementById("user-id").value = usuario.id;
+  document.getElementById("user-nombre").value = usuario.usuario;
+  document.getElementById("user-correo").value = usuario.correo;
+  document.getElementById("user-rol").value = usuario.rol;
+
+  document.getElementById("modal-usuario").classList.remove("hidden");
+}
+
+async function guardarUsuario(event) {
+  event.preventDefault();
+  const id = document.getElementById("user-id").value;
+  const usuario = document.getElementById("user-nombre").value.trim();
+  const correo = document.getElementById("user-correo").value.trim();
+  const rol = document.getElementById("user-rol").value;
+
+  const idAdmin = localStorage.getItem("id_usuario");
+
+  try {
+    const respuesta = await fetch(`/admin/usuarios/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "usuario-id": idAdmin
+      },
+      body: JSON.stringify({ usuario, correo, rol })
+    });
+    const datos = await respuesta.json();
+
+    if (datos.ok) {
+      mostrarToastAdmin("✅ Usuario actualizado correctamente", true);
+      cerrarModal("modal-usuario");
+      verUsuarios();
+    } else {
+      mostrarToastAdmin(datos.mensaje || "Error al actualizar usuario", false);
+    }
+  } catch (error) {
+    console.error("Error al actualizar usuario:", error);
+    mostrarToastAdmin("Error de conexión al actualizar usuario", false);
+  }
+}
+
+function confirmarEliminarUsuario(id, nombreUsuario) {
+  abrirModalConfirmacion(
+    `¿Estás seguro de que deseas eliminar al usuario "${nombreUsuario}" (ID #${id})?`,
+    async () => {
+      const idAdmin = localStorage.getItem("id_usuario");
+      try {
+        const respuesta = await fetch(`/admin/usuarios/${id}`, {
+          method: "DELETE",
+          headers: { "usuario-id": idAdmin }
+        });
+        const datos = await respuesta.json();
+
+        if (datos.ok) {
+          mostrarToastAdmin("✅ Usuario eliminado correctamente", true);
+          verUsuarios();
+        } else {
+          mostrarToastAdmin(datos.mensaje || "No se pudo eliminar el usuario", false);
+        }
+      } catch (error) {
+        console.error("Error al eliminar usuario:", error);
+        mostrarToastAdmin("Error de conexión al eliminar usuario", false);
+      }
+    }
+  );
+}
+
+// ===============================
+// GESTIONAR PRODUCTOS
+// ===============================
+let productosAdminGlobales = [];
+
+async function gestionarProductos() {
+  if (!verificarAccesoAdmin()) return;
+
+  const tbody = document.getElementById("tabla-productos-body");
+  if (!tbody) return;
+
+  tbody.innerHTML = `<tr><td colspan="7" class="loading">Cargando productos...</td></tr>`;
+
+  const idUsuario = localStorage.getItem("id_usuario");
+
+  try {
+    const respuesta = await fetch("/admin/productos", {
+      method: "GET",
+      headers: { "usuario-id": idUsuario }
+    });
+    const datos = await respuesta.json();
+
+    if (!datos.ok) {
+      mostrarToastAdmin(datos.mensaje || "Error al obtener productos", false);
+      tbody.innerHTML = `<tr><td colspan="7" class="loading">Error al cargar productos.</td></tr>`;
+      return;
+    }
+
+    productosAdminGlobales = datos.productos || [];
+
+    if (productosAdminGlobales.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="7" class="loading">No hay productos registrados.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = "";
+    productosAdminGlobales.forEach((p) => {
+      const tr = document.createElement("tr");
+
+      tr.innerHTML = `
+        <td><strong>#${p.id}</strong></td>
+        <td><img src="/img/${p.imagen}" alt="${p.nombre}" class="img-thumb" onerror="this.src='/img/Banner.png'"></td>
+        <td><strong>${p.nombre}</strong></td>
+        <td>${p.descripcion || ""}</td>
+        <td>$${Number(p.precio).toLocaleString("es-CO")}</td>
+        <td>${p.stock}</td>
+        <td>
+          <div class="acciones-cell">
+            <button class="btn-edit" onclick="abrirModalEditarProducto(${p.id})">✏️ Editar</button>
+            <button class="btn-delete" onclick="confirmarEliminarProducto(${p.id}, '${p.nombre.replace(/'/g, "\\'")}')">🗑️ Eliminar</button>
+          </div>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  } catch (error) {
+    console.error("Error al consultar productos:", error);
+    mostrarToastAdmin("No se pudieron cargar los productos.", false);
+    tbody.innerHTML = `<tr><td colspan="7" class="loading">Error al conectar con el servidor.</td></tr>`;
+  }
+}
+
+function abrirModalAgregarProducto() {
+  document.getElementById("modal-producto-titulo").textContent = "Agregar Producto";
+  document.getElementById("prod-id").value = "";
+  document.getElementById("form-producto").reset();
+
+  document.getElementById("modal-producto").classList.remove("hidden");
+}
+
+function abrirModalEditarProducto(id) {
+  const producto = productosAdminGlobales.find((p) => p.id === id);
+  if (!producto) return;
+
+  document.getElementById("modal-producto-titulo").textContent = "Editar Producto";
+  document.getElementById("prod-id").value = producto.id;
+  document.getElementById("prod-nombre").value = producto.nombre;
+  document.getElementById("prod-descripcion").value = producto.descripcion || "";
+  document.getElementById("prod-precio").value = producto.precio;
+  document.getElementById("prod-stock").value = producto.stock;
+  document.getElementById("prod-imagen").value = producto.imagen;
+
+  document.getElementById("modal-producto").classList.remove("hidden");
+}
+
+async function guardarProducto(event) {
+  event.preventDefault();
+  const id = document.getElementById("prod-id").value;
+  const nombre = document.getElementById("prod-nombre").value.trim();
+  const descripcion = document.getElementById("prod-descripcion").value.trim();
+  const precio = Number(document.getElementById("prod-precio").value);
+  const stock = Number(document.getElementById("prod-stock").value);
+  const imagen = document.getElementById("prod-imagen").value.trim();
+
+  const idAdmin = localStorage.getItem("id_usuario");
+  const esEdicion = Boolean(id);
+
+  const url = esEdicion ? `/admin/productos/${id}` : "/admin/productos";
+  const method = esEdicion ? "PUT" : "POST";
+
+  try {
+    const respuesta = await fetch(url, {
+      method: method,
+      headers: {
+        "Content-Type": "application/json",
+        "usuario-id": idAdmin
+      },
+      body: JSON.stringify({ nombre, descripcion, precio, imagen, stock })
+    });
+    const datos = await respuesta.json();
+
+    if (datos.ok) {
+      mostrarToastAdmin(`✅ ${datos.mensaje}`, true);
+      cerrarModal("modal-producto");
+      gestionarProductos();
+      if (document.getElementById("tabla-stock-body")) verStock();
+    } else {
+      mostrarToastAdmin(datos.mensaje || "Error al guardar el producto", false);
+    }
+  } catch (error) {
+    console.error("Error al guardar producto:", error);
+    mostrarToastAdmin("Error de conexión al guardar producto", false);
+  }
+}
+
+function confirmarEliminarProducto(id, nombreProducto) {
+  abrirModalConfirmacion(
+    `¿Estás seguro de que deseas eliminar el producto "${nombreProducto}" (ID #${id})?`,
+    async () => {
+      const idAdmin = localStorage.getItem("id_usuario");
+      try {
+        const respuesta = await fetch(`/admin/productos/${id}`, {
+          method: "DELETE",
+          headers: { "usuario-id": idAdmin }
+        });
+        const datos = await respuesta.json();
+
+        if (datos.ok) {
+          mostrarToastAdmin("✅ Producto eliminado correctamente", true);
+          gestionarProductos();
+          if (document.getElementById("tabla-stock-body")) verStock();
+        } else {
+          mostrarToastAdmin(datos.mensaje || "No se pudo eliminar el producto", false);
+        }
+      } catch (error) {
+        console.error("Error al eliminar producto:", error);
+        mostrarToastAdmin("Error de conexión al eliminar el producto", false);
+      }
+    }
+  );
+}
+
+// Funciones de compatibilidad
+function agregarProducto() {
+  abrirModalAgregarProducto();
+}
+
+function editarProductos() {
+  gestionarProductos();
+  cambiarTab("productos");
+}
+
+function eliminarProductos() {
+  gestionarProductos();
+  cambiarTab("productos");
+}
+
+// ===============================
+// VER & CONTROL DE STOCK
+// ===============================
+let stockGlobal = [];
+
+async function verStock() {
+  if (!verificarAccesoAdmin()) return;
+
+  const tbody = document.getElementById("tabla-stock-body");
+  if (!tbody) return;
+
+  tbody.innerHTML = `<tr><td colspan="5" class="loading">Cargando control de stock...</td></tr>`;
+
+  const idUsuario = localStorage.getItem("id_usuario");
+
+  try {
+    const respuesta = await fetch("/admin/stock", {
+      method: "GET",
+      headers: { "usuario-id": idUsuario }
+    });
+    const datos = await respuesta.json();
+
+    if (!datos.ok) {
+      mostrarToastAdmin(datos.mensaje || "Error al consultar stock", false);
+      tbody.innerHTML = `<tr><td colspan="5" class="loading">Error al cargar stock.</td></tr>`;
+      return;
+    }
+
+    stockGlobal = datos.productos || [];
+
+    if (stockGlobal.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5" class="loading">No hay productos en inventario.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = "";
+    stockGlobal.forEach((p) => {
+      const tr = document.createElement("tr");
+      const esStockBajo = p.stock <= 5;
+      const badgeStock = esStockBajo
+        ? `<span class="badge badge-stock-low">⚠️ Stock Bajo (${p.stock})</span>`
+        : `<span class="badge badge-stock-ok">✅ Normal (${p.stock})</span>`;
+
+      tr.innerHTML = `
+        <td><strong>#${p.id}</strong></td>
+        <td><strong>${p.nombre}</strong></td>
+        <td>${p.stock} unidades</td>
+        <td>${badgeStock}</td>
+        <td>
+          <button class="btn-edit" onclick="abrirModalEditarStock(${p.id}, '${p.nombre.replace(/'/g, "\\'")}', ${p.stock})">✏️ Actualizar Stock</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  } catch (error) {
+    console.error("Error al consultar stock:", error);
+    mostrarToastAdmin("No se pudo consultar el stock.", false);
+    tbody.innerHTML = `<tr><td colspan="5" class="loading">Error de conexión al cargar stock.</td></tr>`;
+  }
+}
+
+function abrirModalEditarStock(id, nombre, stockActual) {
+  document.getElementById("stock-prod-id").value = id;
+  document.getElementById("stock-prod-nombre").textContent = `${nombre} (ID #${id})`;
+  document.getElementById("stock-cantidad").value = stockActual;
+
+  document.getElementById("modal-stock").classList.remove("hidden");
+}
+
+async function guardarStock(event) {
+  event.preventDefault();
+  const id = document.getElementById("stock-prod-id").value;
+  const stock = Number(document.getElementById("stock-cantidad").value);
+
+  const idAdmin = localStorage.getItem("id_usuario");
+
+  try {
+    const respuesta = await fetch(`/admin/stock/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "usuario-id": idAdmin
+      },
+      body: JSON.stringify({ stock })
+    });
+    const datos = await respuesta.json();
+
+    if (datos.ok) {
+      mostrarToastAdmin("✅ Stock actualizado correctamente", true);
+      cerrarModal("modal-stock");
+      verStock();
+      if (document.getElementById("tabla-productos-body")) gestionarProductos();
+    } else {
+      mostrarToastAdmin(datos.mensaje || "Error al actualizar stock", false);
+    }
+  } catch (error) {
+    console.error("Error al actualizar stock:", error);
+    mostrarToastAdmin("Error de conexión al actualizar stock", false);
+  }
+}
+
+// ===============================
+// CERRAR SESIÓN Y AUTOMATIZACIÓN
+// ===============================
 function cerrarSesion() {
   localStorage.removeItem("id_usuario");
   localStorage.removeItem("usuario");
+  localStorage.removeItem("rol");
   window.location.href = "inicio.html";
 }
+
+// Inicialización en admin.html
+if (window.location.pathname.includes("admin.html")) {
+  document.addEventListener("DOMContentLoaded", () => {
+    if (verificarAccesoAdmin()) {
+      const nombreUser = localStorage.getItem("usuario");
+      const elemAdmin = document.getElementById("nombre-admin");
+      if (elemAdmin && nombreUser) {
+        elemAdmin.textContent = `Administrador (${nombreUser})`;
+      }
+      gestionarProductos();
+    }
+  });
+}
+
 // Ir al detalle del producto
 function verDetalleProducto(idProducto) {
   window.location.href = `detalleproducto.html?id=${idProducto}`;
