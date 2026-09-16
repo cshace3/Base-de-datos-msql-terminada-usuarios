@@ -48,7 +48,17 @@
             <!-- Aquí aparecerán los productos -->
             <div id="lista-carrito"></div>
 
-            <!-- Total -->
+            <!-- Sección de Cupones de Descuento -->
+            <div class="seccion-cupon">
+                <label for="codigo-cupon-input"><i class="fa-solid fa-ticket"></i> ¿Tienes un cupón de descuento?</label>
+                <div class="cupon-input-group">
+                    <input type="text" id="codigo-cupon-input" placeholder="Ej: OFERTA10" autocomplete="off" style="text-transform: uppercase;">
+                    <button type="button" id="btn-aplicar-cupon" onclick="aplicarCupon()">Aplicar Cupón</button>
+                </div>
+                <div id="mensaje-cupon"></div>
+            </div>
+
+            <!-- Total y Desglose -->
             <div id="total-carrito">
                 <h2>Total: $0</h2>
             </div>

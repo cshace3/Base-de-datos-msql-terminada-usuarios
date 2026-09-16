@@ -540,6 +540,370 @@ app.get("/admin/stock", verificarAdmin, (req, res) => {
   });
 
 });
+// ===============================
+// ADMINISTRADOR - CUPONES
+// ===============================
+
+// Ver todos los cupones
+app.get("/admin/cupones", (req, res) => {
+  const usuarioId = req.headers["usuario-id"];
+
+  if (!usuarioId) {
+    return res.status(401).json({
+      ok: false,
+      mensaje: "No autorizado",
+    });
+  }
+
+  const sqlAdmin = "SELECT rol FROM usuarios WHERE id = ?";
+
+  conexion.query(sqlAdmin, [usuarioId], (errorAdmin, resultadoAdmin) => {
+    if (errorAdmin) {
+      console.error("Error al verificar administrador:", errorAdmin);
+      return res.status(500).json({
+        ok: false,
+        mensaje: "Error al verificar permisos",
+      });
+    }
+
+    if (
+      resultadoAdmin.length === 0 ||
+      resultadoAdmin[0].rol !== "admin"
+    ) {
+      return res.status(403).json({
+        ok: false,
+        mensaje: "No tienes permisos de administrador",
+      });
+    }
+
+    const sql = `
+      SELECT 
+        c.id,
+        c.codigo,
+        c.descuento,
+        c.producto_id,
+        p.nombre AS producto,
+        c.fecha_creacion
+      FROM cupones c
+      INNER JOIN productos p ON c.producto_id = p.id
+      ORDER BY c.id DESC
+    `;
+
+    conexion.query(sql, (error, resultados) => {
+      if (error) {
+        console.error("Error al obtener cupones:", error);
+        return res.status(500).json({
+          ok: false,
+          mensaje: "Error al obtener los cupones",
+        });
+      }
+
+      res.json({
+        ok: true,
+        cupones: resultados,
+      });
+    });
+  });
+});
+// Crear cupón
+app.post("/admin/cupones", (req, res) => {
+  const usuarioId = req.headers["usuario-id"];
+
+  const { codigo, descuento, producto_id } = req.body;
+
+  if (!usuarioId) {
+    return res.status(401).json({
+      ok: false,
+      mensaje: "No autorizado",
+    });
+  }
+
+  if (!codigo || descuento === undefined || !producto_id) {
+    return res.status(400).json({
+      ok: false,
+      mensaje: "Todos los campos son obligatorios",
+    });
+  }
+
+  if (Number(descuento) <= 0 || Number(descuento) > 100) {
+    return res.status(400).json({
+      ok: false,
+      mensaje: "El descuento debe estar entre 1% y 100%",
+    });
+  }
+
+  const sqlAdmin = "SELECT rol FROM usuarios WHERE id = ?";
+
+  conexion.query(sqlAdmin, [usuarioId], (errorAdmin, resultadoAdmin) => {
+    if (errorAdmin) {
+      console.error("Error al verificar administrador:", errorAdmin);
+      return res.status(500).json({
+        ok: false,
+        mensaje: "Error al verificar permisos",
+      });
+    }
+
+    if (
+      resultadoAdmin.length === 0 ||
+      resultadoAdmin[0].rol !== "admin"
+    ) {
+      return res.status(403).json({
+        ok: false,
+        mensaje: "No tienes permisos de administrador",
+      });
+    }
+
+    const sql = `
+      INSERT INTO cupones
+      (codigo, descuento, producto_id)
+      VALUES (?, ?, ?)
+    `;
+
+    conexion.query(
+      sql,
+      [codigo.trim().toUpperCase(), descuento, producto_id],
+      (error, resultado) => {
+        if (error) {
+          console.error("Error al crear cupón:", error);
+
+          if (error.code === "ER_DUP_ENTRY") {
+            return res.status(400).json({
+              ok: false,
+              mensaje: "Ese código de cupón ya existe",
+            });
+          }
+
+          if (error.code === "ER_NO_REFERENCED_ROW_2") {
+            return res.status(400).json({
+              ok: false,
+              mensaje: "El producto seleccionado no existe",
+            });
+          }
+
+          return res.status(500).json({
+            ok: false,
+            mensaje: "No se pudo crear el cupón",
+          });
+        }
+
+        res.json({
+          ok: true,
+          mensaje: "Cupón creado correctamente",
+          id: resultado.insertId,
+        });
+      }
+    );
+  });
+});
+// Editar cupón
+app.put("/admin/cupones/:id", (req, res) => {
+  const usuarioId = req.headers["usuario-id"];
+  const idCupon = req.params.id;
+
+  const { codigo, descuento, producto_id } = req.body;
+
+  if (!usuarioId) {
+    return res.status(401).json({
+      ok: false,
+      mensaje: "No autorizado",
+    });
+  }
+
+  if (!codigo || descuento === undefined || !producto_id) {
+    return res.status(400).json({
+      ok: false,
+      mensaje: "Todos los campos son obligatorios",
+    });
+  }
+
+  if (Number(descuento) <= 0 || Number(descuento) > 100) {
+    return res.status(400).json({
+      ok: false,
+      mensaje: "El descuento debe estar entre 1% y 100%",
+    });
+  }
+
+  const sqlAdmin = "SELECT rol FROM usuarios WHERE id = ?";
+
+  conexion.query(sqlAdmin, [usuarioId], (errorAdmin, resultadoAdmin) => {
+    if (errorAdmin) {
+      return res.status(500).json({
+        ok: false,
+        mensaje: "Error al verificar permisos",
+      });
+    }
+
+    if (
+      resultadoAdmin.length === 0 ||
+      resultadoAdmin[0].rol !== "admin"
+    ) {
+      return res.status(403).json({
+        ok: false,
+        mensaje: "No tienes permisos de administrador",
+      });
+    }
+
+    const sql = `
+      UPDATE cupones
+      SET codigo = ?, descuento = ?, producto_id = ?
+      WHERE id = ?
+    `;
+
+    conexion.query(
+      sql,
+      [
+        codigo.trim().toUpperCase(),
+        descuento,
+        producto_id,
+        idCupon,
+      ],
+      (error, resultado) => {
+        if (error) {
+          console.error("Error al editar cupón:", error);
+
+          if (error.code === "ER_DUP_ENTRY") {
+            return res.status(400).json({
+              ok: false,
+              mensaje: "Ese código de cupón ya existe",
+            });
+          }
+
+          return res.status(500).json({
+            ok: false,
+            mensaje: "No se pudo editar el cupón",
+          });
+        }
+
+        if (resultado.affectedRows === 0) {
+          return res.status(404).json({
+            ok: false,
+            mensaje: "Cupón no encontrado",
+          });
+        }
+
+        res.json({
+          ok: true,
+          mensaje: "Cupón actualizado correctamente",
+        });
+      }
+    );
+  });
+});
+// Eliminar cupón
+app.delete("/admin/cupones/:id", (req, res) => {
+  const usuarioId = req.headers["usuario-id"];
+  const idCupon = req.params.id;
+
+  if (!usuarioId) {
+    return res.status(401).json({
+      ok: false,
+      mensaje: "No autorizado",
+    });
+  }
+
+  const sqlAdmin = "SELECT rol FROM usuarios WHERE id = ?";
+
+  conexion.query(sqlAdmin, [usuarioId], (errorAdmin, resultadoAdmin) => {
+    if (errorAdmin) {
+      return res.status(500).json({
+        ok: false,
+        mensaje: "Error al verificar permisos",
+      });
+    }
+
+    if (
+      resultadoAdmin.length === 0 ||
+      resultadoAdmin[0].rol !== "admin"
+    ) {
+      return res.status(403).json({
+        ok: false,
+        mensaje: "No tienes permisos de administrador",
+      });
+    }
+
+    const sql = "DELETE FROM cupones WHERE id = ?";
+
+    conexion.query(sql, [idCupon], (error, resultado) => {
+      if (error) {
+        console.error("Error al eliminar cupón:", error);
+        return res.status(500).json({
+          ok: false,
+          mensaje: "No se pudo eliminar el cupón",
+        });
+      }
+
+      if (resultado.affectedRows === 0) {
+        return res.status(404).json({
+          ok: false,
+          mensaje: "Cupón no encontrado",
+        });
+      }
+
+      res.json({
+        ok: true,
+        mensaje: "Cupón eliminado correctamente",
+      });
+    });
+  });
+});
+
+// ===============================
+// USUARIO - VALIDAR CUPÓN
+// ===============================
+app.post("/cupones/validar", (req, res) => {
+  const { codigo } = req.body;
+
+  if (!codigo || typeof codigo !== "string" || !codigo.trim()) {
+    return res.status(400).json({
+      ok: false,
+      mensaje: "Proporcione un código de cupón válido",
+    });
+  }
+
+  const sql = `
+    SELECT 
+      c.id,
+      c.codigo,
+      c.descuento,
+      c.producto_id,
+      p.nombre AS producto_nombre,
+      p.precio AS producto_precio
+    FROM cupones c
+    INNER JOIN productos p ON c.producto_id = p.id
+    WHERE UPPER(c.codigo) = UPPER(?)
+  `;
+
+  conexion.query(sql, [codigo.trim()], (error, resultados) => {
+    if (error) {
+      console.error("Error al validar cupón:", error);
+      return res.status(500).json({
+        ok: false,
+        mensaje: "Error al validar el cupón",
+      });
+    }
+
+    if (resultados.length === 0) {
+      return res.status(404).json({
+        ok: false,
+        mensaje: "El cupón no existe o no es válido",
+      });
+    }
+
+    const cupon = resultados[0];
+    res.json({
+      ok: true,
+      mensaje: "Cupón aplicado correctamente",
+      cupon: {
+        id: cupon.id,
+        codigo: cupon.codigo,
+        descuento: Number(cupon.descuento),
+        producto_id: cupon.producto_id,
+        producto_nombre: cupon.producto_nombre,
+        producto_precio: Number(cupon.producto_precio),
+      },
+    });
+  });
+});
 
 // ===============================
 // ADMIN - ACTUALIZAR STOCK

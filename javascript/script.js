@@ -415,6 +415,47 @@ async function agregarCarrito(idProducto, ev) {
   }
 }
 //Carga el carrito
+let cuponAplicado = null;
+
+async function aplicarCupon() {
+  const input = document.getElementById("codigo-cupon-input");
+  const mensajeDiv = document.getElementById("mensaje-cupon");
+  if (!input || !mensajeDiv) return;
+
+  const codigo = input.value.trim().toUpperCase();
+  if (!codigo) {
+    mensajeDiv.className = "mensaje-error";
+    mensajeDiv.textContent = "Por favor ingresa un código de cupón.";
+    return;
+  }
+
+  try {
+    const res = await fetch("/cupones/validar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ codigo }),
+    });
+
+    const data = await res.json();
+
+    if (data.ok && data.cupon) {
+      cuponAplicado = data.cupon;
+      mensajeDiv.className = "mensaje-exito";
+      mensajeDiv.textContent = `¡Cupón "${data.cupon.codigo}" (${data.cupon.descuento}% OFF) aplicado para ${data.cupon.producto_nombre}!`;
+      cargarCarrito();
+    } else {
+      cuponAplicado = null;
+      mensajeDiv.className = "mensaje-error";
+      mensajeDiv.textContent = data.mensaje || "Cupón no válido.";
+      cargarCarrito();
+    }
+  } catch (err) {
+    console.error("Error al aplicar cupón:", err);
+    mensajeDiv.className = "mensaje-error";
+    mensajeDiv.textContent = "Error al conectar con el servidor.";
+  }
+}
+
 async function cargarCarrito() {
   const idUsuario = localStorage.getItem("id_usuario");
 
@@ -435,19 +476,33 @@ async function cargarCarrito() {
 
     if (!datos.ok || datos.carrito.length === 0) {
       contenedor.innerHTML = "<p>Tu carrito está vacío.</p>";
-
+      const totalContenedor = document.getElementById("total-carrito");
+      if (totalContenedor) totalContenedor.innerHTML = "<h2>Total: $0</h2>";
       return;
     }
 
-    let total = 0;
+    let subtotalGeneral = 0;
+    let descuentoTotal = 0;
 
     datos.carrito.forEach((producto) => {
-      const subtotal = Number(producto.precio) * producto.cantidad;
+      const subtotalItem = Number(producto.precio) * producto.cantidad;
+      subtotalGeneral += subtotalItem;
 
-      total += subtotal;
+      let descuentoItem = 0;
+      let textoEtiquetaDescuento = "";
+
+      // Verificar si el cupón aplica a este producto
+      if (cuponAplicado && Number(cuponAplicado.producto_id) === Number(producto.producto_id)) {
+        descuentoItem = subtotalItem * (cuponAplicado.descuento / 100);
+        descuentoTotal += descuentoItem;
+        textoEtiquetaDescuento = `
+          <p style="color: #34d399; font-weight: bold; margin-top: 4px;">
+            <i class="fa-solid fa-tag"></i> Descuento del ${cuponAplicado.descuento}% (${cuponAplicado.codigo}): -$${descuentoItem.toLocaleString("es-CO")}
+          </p>
+        `;
+      }
 
       const div = document.createElement("div");
-
       div.classList.add("producto-carrito");
 
       div.innerHTML = `
@@ -458,7 +513,7 @@ async function cargarCarrito() {
 
         <p>${producto.descripcion}</p>
 
-        <p>Precio: $${Number(producto.precio).toLocaleString("es-CO")}</p>
+        <p>Precio original: $${Number(producto.precio).toLocaleString("es-CO")}</p>
 
         <div class="cantidad">
             <button onclick="disminuirCantidad(${producto.id})">−</button>
@@ -468,7 +523,8 @@ async function cargarCarrito() {
             <button onclick="aumentarCantidad(${producto.id})">+</button>
         </div>
 
-        <p>Subtotal: $${subtotal.toLocaleString("es-CO")}</p>
+        <p>Subtotal: $${subtotalItem.toLocaleString("es-CO")}</p>
+        ${textoEtiquetaDescuento}
 
         <button onclick="eliminarProducto(${producto.id})">
             Eliminar
@@ -479,9 +535,30 @@ async function cargarCarrito() {
       contenedor.appendChild(div);
     });
 
-    document.getElementById("total-carrito").innerHTML = `
-            <h2>Total: $${total.toLocaleString("es-CO")}</h2>
+    const totalFinal = subtotalGeneral - descuentoTotal;
+    const totalContenedor = document.getElementById("total-carrito");
+
+    if (totalContenedor) {
+      if (cuponAplicado && descuentoTotal > 0) {
+        totalContenedor.innerHTML = `
+          <div class="desglose-total">
+            <div class="linea-desglose">
+              <span>Subtotal:</span>
+              <span>$${subtotalGeneral.toLocaleString("es-CO")}</span>
+            </div>
+            <div class="linea-desglose linea-descuento">
+              <span>Descuento (${cuponAplicado.codigo} - ${cuponAplicado.descuento}%):</span>
+              <span>-$${descuentoTotal.toLocaleString("es-CO")}</span>
+            </div>
+            <h2>Total Final: $${totalFinal.toLocaleString("es-CO")}</h2>
+          </div>
         `;
+      } else {
+        totalContenedor.innerHTML = `
+          <h2>Total: $${subtotalGeneral.toLocaleString("es-CO")}</h2>
+        `;
+      }
+    }
   } catch (error) {
     console.error("Error al cargar el carrito:", error);
   }
@@ -1191,7 +1268,10 @@ function verificarAccesoAdmin() {
   const rol = localStorage.getItem("rol");
 
   if (rol !== "admin") {
-    mostrarToastAdmin("No tienes permisos para acceder al panel de administrador.", false);
+    mostrarToastAdmin(
+      "No tienes permisos para acceder al panel de administrador.",
+      false,
+    );
     setTimeout(() => {
       window.location.href = "inicio.html";
     }, 1500);
@@ -1203,12 +1283,12 @@ function verificarAccesoAdmin() {
 
 // Cambiar de Pestaña en Admin
 function cambiarTab(nombreTab) {
-  const tabs = ["productos", "usuarios", "stock"];
-  
+  const tabs = ["productos", "usuarios", "stock", "cupones"];
+
   tabs.forEach((tab) => {
     const btn = document.getElementById(`tab-btn-${tab}`);
     const sec = document.getElementById(`tab-${tab}`);
-    
+
     if (btn && sec) {
       if (tab === nombreTab) {
         btn.classList.add("active");
@@ -1224,6 +1304,7 @@ function cambiarTab(nombreTab) {
   if (nombreTab === "productos") gestionarProductos();
   if (nombreTab === "usuarios") verUsuarios();
   if (nombreTab === "stock") verStock();
+  if (nombreTab === "cupones") gestionarCupones();
 }
 
 // Control de Modales
@@ -1274,7 +1355,7 @@ async function verUsuarios() {
   try {
     const respuesta = await fetch("/admin/usuarios", {
       method: "GET",
-      headers: { "usuario-id": idUsuario }
+      headers: { "usuario-id": idUsuario },
     });
     const datos = await respuesta.json();
 
@@ -1343,9 +1424,9 @@ async function guardarUsuario(event) {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
-        "usuario-id": idAdmin
+        "usuario-id": idAdmin,
       },
-      body: JSON.stringify({ usuario, correo, rol })
+      body: JSON.stringify({ usuario, correo, rol }),
     });
     const datos = await respuesta.json();
 
@@ -1370,7 +1451,7 @@ function confirmarEliminarUsuario(id, nombreUsuario) {
       try {
         const respuesta = await fetch(`/admin/usuarios/${id}`, {
           method: "DELETE",
-          headers: { "usuario-id": idAdmin }
+          headers: { "usuario-id": idAdmin },
         });
         const datos = await respuesta.json();
 
@@ -1378,13 +1459,16 @@ function confirmarEliminarUsuario(id, nombreUsuario) {
           mostrarToastAdmin("✅ Usuario eliminado correctamente", true);
           verUsuarios();
         } else {
-          mostrarToastAdmin(datos.mensaje || "No se pudo eliminar el usuario", false);
+          mostrarToastAdmin(
+            datos.mensaje || "No se pudo eliminar el usuario",
+            false,
+          );
         }
       } catch (error) {
         console.error("Error al eliminar usuario:", error);
         mostrarToastAdmin("Error de conexión al eliminar usuario", false);
       }
-    }
+    },
   );
 }
 
@@ -1406,7 +1490,7 @@ async function gestionarProductos() {
   try {
     const respuesta = await fetch("/admin/productos", {
       method: "GET",
-      headers: { "usuario-id": idUsuario }
+      headers: { "usuario-id": idUsuario },
     });
     const datos = await respuesta.json();
 
@@ -1451,7 +1535,8 @@ async function gestionarProductos() {
 }
 
 function abrirModalAgregarProducto() {
-  document.getElementById("modal-producto-titulo").textContent = "Agregar Producto";
+  document.getElementById("modal-producto-titulo").textContent =
+    "Agregar Producto";
   document.getElementById("prod-id").value = "";
   document.getElementById("form-producto").reset();
 
@@ -1462,10 +1547,12 @@ function abrirModalEditarProducto(id) {
   const producto = productosAdminGlobales.find((p) => p.id === id);
   if (!producto) return;
 
-  document.getElementById("modal-producto-titulo").textContent = "Editar Producto";
+  document.getElementById("modal-producto-titulo").textContent =
+    "Editar Producto";
   document.getElementById("prod-id").value = producto.id;
   document.getElementById("prod-nombre").value = producto.nombre;
-  document.getElementById("prod-descripcion").value = producto.descripcion || "";
+  document.getElementById("prod-descripcion").value =
+    producto.descripcion || "";
   document.getElementById("prod-precio").value = producto.precio;
   document.getElementById("prod-stock").value = producto.stock;
   document.getElementById("prod-imagen").value = producto.imagen;
@@ -1493,9 +1580,9 @@ async function guardarProducto(event) {
       method: method,
       headers: {
         "Content-Type": "application/json",
-        "usuario-id": idAdmin
+        "usuario-id": idAdmin,
       },
-      body: JSON.stringify({ nombre, descripcion, precio, imagen, stock })
+      body: JSON.stringify({ nombre, descripcion, precio, imagen, stock }),
     });
     const datos = await respuesta.json();
 
@@ -1521,7 +1608,7 @@ function confirmarEliminarProducto(id, nombreProducto) {
       try {
         const respuesta = await fetch(`/admin/productos/${id}`, {
           method: "DELETE",
-          headers: { "usuario-id": idAdmin }
+          headers: { "usuario-id": idAdmin },
         });
         const datos = await respuesta.json();
 
@@ -1530,13 +1617,16 @@ function confirmarEliminarProducto(id, nombreProducto) {
           gestionarProductos();
           if (document.getElementById("tabla-stock-body")) verStock();
         } else {
-          mostrarToastAdmin(datos.mensaje || "No se pudo eliminar el producto", false);
+          mostrarToastAdmin(
+            datos.mensaje || "No se pudo eliminar el producto",
+            false,
+          );
         }
       } catch (error) {
         console.error("Error al eliminar producto:", error);
         mostrarToastAdmin("Error de conexión al eliminar el producto", false);
       }
-    }
+    },
   );
 }
 
@@ -1573,7 +1663,7 @@ async function verStock() {
   try {
     const respuesta = await fetch("/admin/stock", {
       method: "GET",
-      headers: { "usuario-id": idUsuario }
+      headers: { "usuario-id": idUsuario },
     });
     const datos = await respuesta.json();
 
@@ -1618,7 +1708,8 @@ async function verStock() {
 
 function abrirModalEditarStock(id, nombre, stockActual) {
   document.getElementById("stock-prod-id").value = id;
-  document.getElementById("stock-prod-nombre").textContent = `${nombre} (ID #${id})`;
+  document.getElementById("stock-prod-nombre").textContent =
+    `${nombre} (ID #${id})`;
   document.getElementById("stock-cantidad").value = stockActual;
 
   document.getElementById("modal-stock").classList.remove("hidden");
@@ -1636,9 +1727,9 @@ async function guardarStock(event) {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
-        "usuario-id": idAdmin
+        "usuario-id": idAdmin,
       },
-      body: JSON.stringify({ stock })
+      body: JSON.stringify({ stock }),
     });
     const datos = await respuesta.json();
 
@@ -1654,6 +1745,350 @@ async function guardarStock(event) {
     console.error("Error al actualizar stock:", error);
     mostrarToastAdmin("Error de conexión al actualizar stock", false);
   }
+}
+// ===============================
+// GESTIONAR CUPONES
+// ===============================
+
+let cuponesGlobales = [];
+
+// Mostrar todos los cupones
+async function gestionarCupones() {
+  if (!verificarAccesoAdmin()) return;
+
+  const tbody = document.getElementById("tabla-cupones-body");
+
+  if (!tbody) return;
+
+  tbody.innerHTML = `
+    <tr>
+      <td colspan="6" class="loading">
+        Cargando cupones...
+      </td>
+    </tr>
+  `;
+
+  const idAdmin = localStorage.getItem("id_usuario");
+
+  try {
+    const respuesta = await fetch("/admin/cupones", {
+      method: "GET",
+      headers: {
+        "usuario-id": idAdmin,
+      },
+    });
+
+    const datos = await respuesta.json();
+
+    if (!datos.ok) {
+      mostrarToastAdmin(
+        datos.mensaje || "No se pudieron obtener los cupones",
+        false,
+      );
+
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6" class="loading">
+            Error al cargar los cupones.
+          </td>
+        </tr>
+      `;
+
+      return;
+    }
+
+    cuponesGlobales = datos.cupones || [];
+
+    if (cuponesGlobales.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6" class="loading">
+            No hay cupones registrados.
+          </td>
+        </tr>
+      `;
+
+      return;
+    }
+
+    tbody.innerHTML = "";
+
+    cuponesGlobales.forEach((cupon) => {
+      const tr = document.createElement("tr");
+
+      const nombreProducto =
+        cupon.producto_nombre ||
+        cupon.nombre_producto ||
+        cupon.producto ||
+        `Producto #${cupon.producto_id}`;
+
+      const fecha = cupon.fecha_creacion
+        ? new Date(cupon.fecha_creacion).toLocaleDateString("es-CO")
+        : "Sin fecha";
+
+      tr.innerHTML = `
+        <td>
+          <strong>#${cupon.id}</strong>
+        </td>
+
+        <td>
+          <strong>${cupon.codigo}</strong>
+        </td>
+
+        <td>
+          <span class="badge badge-admin">
+            ${cupon.descuento}%
+          </span>
+        </td>
+
+        <td>
+          ${nombreProducto}
+        </td>
+
+        <td>
+          ${fecha}
+        </td>
+
+        <td>
+          <div class="acciones-cell">
+
+            <button
+              class="btn-edit"
+              onclick="abrirModalEditarCupon(${cupon.id})">
+              ✏️ Editar
+            </button>
+
+            <button
+              class="btn-delete"
+              onclick="confirmarEliminarCupon(${cupon.id}, '${cupon.codigo.replace(/'/g, "\\'")}')">
+              🗑️ Eliminar
+            </button>
+
+          </div>
+        </td>
+      `;
+
+      tbody.appendChild(tr);
+    });
+  } catch (error) {
+    console.error("Error al cargar cupones:", error);
+
+    mostrarToastAdmin("Error de conexión al cargar los cupones", false);
+
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6" class="loading">
+          Error al conectar con el servidor.
+        </td>
+      </tr>
+    `;
+  }
+}
+
+// Cargar productos dentro del SELECT del cupón
+async function cargarProductosParaCupon() {
+  const select = document.getElementById("cupon-producto");
+
+  if (!select) return;
+
+  try {
+    // Si ya tenemos los productos cargados en el administrador,
+    // utilizamos esos datos.
+    if (!productosAdminGlobales || productosAdminGlobales.length === 0) {
+      const idAdmin = localStorage.getItem("id_usuario");
+
+      const respuesta = await fetch("/admin/productos", {
+        method: "GET",
+        headers: {
+          "usuario-id": idAdmin,
+        },
+      });
+
+      const datos = await respuesta.json();
+
+      if (datos.ok) {
+        productosAdminGlobales = datos.productos || [];
+      }
+    }
+
+    select.innerHTML = `
+      <option value="">
+        Selecciona un producto
+      </option>
+    `;
+
+    productosAdminGlobales.forEach((producto) => {
+      const option = document.createElement("option");
+
+      option.value = producto.id;
+      option.textContent = `${producto.nombre} - $${Number(producto.precio).toLocaleString("es-CO")}`;
+
+      select.appendChild(option);
+    });
+  } catch (error) {
+    console.error("Error al cargar productos para el cupón:", error);
+
+    mostrarToastAdmin("No se pudieron cargar los productos", false);
+  }
+}
+
+// Abrir modal para crear cupón
+async function abrirModalAgregarCupon() {
+  const formulario = document.getElementById("form-cupon");
+
+  if (!formulario) return;
+
+  formulario.reset();
+
+  document.getElementById("cupon-id").value = "";
+
+  document.getElementById("modal-cupon-titulo").textContent = "Crear Cupón";
+
+  await cargarProductosParaCupon();
+
+  document.getElementById("modal-cupon").classList.remove("hidden");
+}
+
+// Abrir modal para editar cupón
+async function abrirModalEditarCupon(id) {
+  const cupon = cuponesGlobales.find((c) => Number(c.id) === Number(id));
+
+  if (!cupon) {
+    mostrarToastAdmin("No se encontró el cupón", false);
+    return;
+  }
+
+  document.getElementById("modal-cupon-titulo").textContent = "Editar Cupón";
+
+  document.getElementById("cupon-id").value = cupon.id;
+
+  document.getElementById("cupon-codigo").value = cupon.codigo;
+
+  document.getElementById("cupon-descuento").value = cupon.descuento;
+
+  await cargarProductosParaCupon();
+
+  document.getElementById("cupon-producto").value = cupon.producto_id;
+
+  document.getElementById("modal-cupon").classList.remove("hidden");
+}
+
+// Guardar o actualizar cupón
+async function guardarCupon(event) {
+  event.preventDefault();
+
+  const id = document.getElementById("cupon-id").value;
+
+  const codigo = document
+    .getElementById("cupon-codigo")
+    .value.trim()
+    .toUpperCase();
+
+  const descuento = Number(document.getElementById("cupon-descuento").value);
+
+  const producto_id = Number(document.getElementById("cupon-producto").value);
+
+  const idAdmin = localStorage.getItem("id_usuario");
+
+  if (!codigo) {
+    mostrarToastAdmin("Debes ingresar un código para el cupón", false);
+
+    return;
+  }
+
+  if (descuento <= 0 || descuento > 100) {
+    mostrarToastAdmin("El descuento debe estar entre 1% y 100%", false);
+
+    return;
+  }
+
+  if (!producto_id) {
+    mostrarToastAdmin("Debes seleccionar un producto", false);
+
+    return;
+  }
+
+  const esEdicion = Boolean(id);
+
+  const url = esEdicion ? `/admin/cupones/${id}` : "/admin/cupones";
+
+  const method = esEdicion ? "PUT" : "POST";
+
+  try {
+    const respuesta = await fetch(url, {
+      method: method,
+
+      headers: {
+        "Content-Type": "application/json",
+        "usuario-id": idAdmin,
+      },
+
+      body: JSON.stringify({
+        codigo,
+        descuento,
+        producto_id,
+      }),
+    });
+
+    const datos = await respuesta.json();
+
+    if (datos.ok) {
+      mostrarToastAdmin(
+        esEdicion
+          ? "✅ Cupón actualizado correctamente"
+          : "✅ Cupón creado correctamente",
+        true,
+      );
+
+      cerrarModal("modal-cupon");
+
+      gestionarCupones();
+    } else {
+      mostrarToastAdmin(datos.mensaje || "No se pudo guardar el cupón", false);
+    }
+  } catch (error) {
+    console.error("Error al guardar cupón:", error);
+
+    mostrarToastAdmin("Error de conexión al guardar el cupón", false);
+  }
+}
+
+// Confirmar eliminación de cupón
+function confirmarEliminarCupon(id, codigo) {
+  abrirModalConfirmacion(
+    `¿Estás seguro de que deseas eliminar el cupón "${codigo}"?`,
+
+    async () => {
+      const idAdmin = localStorage.getItem("id_usuario");
+
+      try {
+        const respuesta = await fetch(`/admin/cupones/${id}`, {
+          method: "DELETE",
+
+          headers: {
+            "usuario-id": idAdmin,
+          },
+        });
+
+        const datos = await respuesta.json();
+
+        if (datos.ok) {
+          mostrarToastAdmin("✅ Cupón eliminado correctamente", true);
+
+          gestionarCupones();
+        } else {
+          mostrarToastAdmin(
+            datos.mensaje || "No se pudo eliminar el cupón",
+            false,
+          );
+        }
+      } catch (error) {
+        console.error("Error al eliminar cupón:", error);
+
+        mostrarToastAdmin("Error de conexión al eliminar el cupón", false);
+      }
+    },
+  );
 }
 
 // ===============================
