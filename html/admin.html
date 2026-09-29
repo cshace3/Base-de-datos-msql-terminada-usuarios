@@ -48,6 +48,15 @@
           </p>
           <button type="button">Ver Usuarios</button>
         </div>
+        <div class="admin-card" onclick="cambiarTab('solicitudes')">
+          <div class="icono">📝</div>
+          <h3>Solicitudes</h3>
+          <p>
+            Revisa y gestiona las solicitudes de personas que desean convertirse
+            en vendedores de Polaris.
+          </p>
+          <button type="button">Ver Solicitudes</button>
+        </div>
 
         <div class="admin-card" onclick="cambiarTab('stock')">
           <div class="icono">📊</div>
@@ -85,6 +94,13 @@
           onclick="cambiarTab('usuarios')"
         >
           👥 Usuarios
+        </button>
+        <button
+          id="tab-btn-solicitudes"
+          class="tab-btn"
+          onclick="cambiarTab('solicitudes')"
+        >
+          📝 Solicitudes
         </button>
         <button
           id="tab-btn-stock"
@@ -156,6 +172,63 @@
           </table>
         </div>
       </section>
+      <!-- VISTA DE SOLICITUDES DE VENDEDORES -->
+      <section id="tab-solicitudes" class="tab-content">
+        <div class="tab-header">
+          <h3>Solicitudes de Vendedores</h3>
+        </div>
+
+        <div class="table-responsive">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Persona</th>
+                <th>Cédula</th>
+                <th>Marca</th>
+                <th>Instagram</th>
+                <th>TikTok</th>
+                <th>Facebook</th>
+                <th>Sitio Web</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+
+            <tbody id="tabla-solicitudes-body">
+              <tr>
+                <td colspan="10" class="loading">Cargando solicitudes...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="tab-header" style="margin-top: 40px">
+          <h3>Solicitudes de Productos</h3>
+        </div>
+
+        <div class="table-responsive">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Producto</th>
+                <th>Marca</th>
+                <th>Vendedor</th>
+                <th>Precio</th>
+                <th>Stock</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+
+            <tbody id="tabla-solicitudes-productos-body">
+              <tr>
+                <td colspan="8" class="loading">Cargando solicitudes...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
 
       <!-- VISTA DE STOCK -->
       <section id="tab-stock" class="tab-content">
@@ -182,118 +255,99 @@
         </div>
       </section>
       <!-- VISTA DE CUPONES -->
-<section id="tab-cupones" class="tab-content">
-    <div class="tab-header">
-        <h3>Cupones y Descuentos</h3>
+      <section id="tab-cupones" class="tab-content">
+        <div class="tab-header">
+          <h3>Cupones y Descuentos</h3>
 
-        <button class="btn-primary" onclick="abrirModalAgregarCupon()">
+          <button class="btn-primary" onclick="abrirModalAgregarCupon()">
             ➕ Crear Cupón
-        </button>
-    </div>
+          </button>
+        </div>
 
-    <div class="table-responsive">
-        <table class="admin-table">
+        <div class="table-responsive">
+          <table class="admin-table">
             <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Código</th>
-                    <th>Descuento</th>
-                    <th>Producto</th>
-                    <th>Fecha de creación</th>
-                    <th>Acciones</th>
-                </tr>
+              <tr>
+                <th>ID</th>
+                <th>Código</th>
+                <th>Descuento</th>
+                <th>Producto</th>
+                <th>Fecha de creación</th>
+                <th>Acciones</th>
+              </tr>
             </thead>
 
             <tbody id="tabla-cupones-body">
-                <tr>
-                    <td colspan="6" class="loading">
-                        Cargando cupones...
-                    </td>
-                </tr>
+              <tr>
+                <td colspan="6" class="loading">Cargando cupones...</td>
+              </tr>
             </tbody>
-        </table>
-    </div>
-</section>
+          </table>
+        </div>
+      </section>
     </main>
     <!-- MODAL CUPÓN (AGREGAR / EDITAR) -->
-<div id="modal-cupon" class="modal-overlay hidden">
-    <div class="modal-card">
-
+    <div id="modal-cupon" class="modal-overlay hidden">
+      <div class="modal-card">
         <div class="modal-header">
-            <h3 id="modal-cupon-titulo">Crear Cupón</h3>
+          <h3 id="modal-cupon-titulo">Crear Cupón</h3>
 
-            <button
-                class="btn-close"
-                onclick="cerrarModal('modal-cupon')">
-                &times;
-            </button>
+          <button class="btn-close" onclick="cerrarModal('modal-cupon')">
+            &times;
+          </button>
         </div>
 
         <form id="form-cupon" onsubmit="guardarCupon(event)">
+          <input type="hidden" id="cupon-id" />
 
-            <input type="hidden" id="cupon-id">
+          <div class="form-group">
+            <label for="cupon-codigo"> Código del Cupón: </label>
 
-            <div class="form-group">
-                <label for="cupon-codigo">
-                    Código del Cupón:
-                </label>
+            <input
+              type="text"
+              id="cupon-codigo"
+              required
+              maxlength="50"
+              placeholder="Ej: POLARIS20"
+            />
+          </div>
 
-                <input
-                    type="text"
-                    id="cupon-codigo"
-                    required
-                    maxlength="50"
-                    placeholder="Ej: POLARIS20">
-            </div>
+          <div class="form-group">
+            <label for="cupon-descuento"> Porcentaje de Descuento: </label>
 
-            <div class="form-group">
-                <label for="cupon-descuento">
-                    Porcentaje de Descuento:
-                </label>
+            <input
+              type="number"
+              id="cupon-descuento"
+              min="1"
+              max="100"
+              step="0.01"
+              required
+              placeholder="Ej: 20"
+            />
+          </div>
 
-                <input
-                    type="number"
-                    id="cupon-descuento"
-                    min="1"
-                    max="100"
-                    step="0.01"
-                    required
-                    placeholder="Ej: 20">
-            </div>
+          <div class="form-group">
+            <label for="cupon-producto"> Producto al que pertenece: </label>
 
-            <div class="form-group">
-                <label for="cupon-producto">
-                    Producto al que pertenece:
-                </label>
+            <select id="cupon-producto" required>
+              <option value="">Selecciona un producto</option>
+            </select>
+          </div>
 
-                <select id="cupon-producto" required>
-                    <option value="">
-                        Selecciona un producto
-                    </option>
-                </select>
-            </div>
+          <div class="modal-actions">
+            <button
+              type="button"
+              class="btn-secondary"
+              onclick="cerrarModal('modal-cupon')"
+            >
+              Cancelar
+            </button>
 
-            <div class="modal-actions">
-
-                <button
-                    type="button"
-                    class="btn-secondary"
-                    onclick="cerrarModal('modal-cupon')">
-                    Cancelar
-                </button>
-
-                <button
-                    type="submit"
-                    class="btn-primary">
-                    Guardar Cupón
-                </button>
-
-            </div>
-
+            <button type="submit" class="btn-primary">Guardar Cupón</button>
+          </div>
         </form>
-
+      </div>
     </div>
-</div>
 
     <!-- MODAL PRODUCTO (AGREGAR / EDITAR) -->
     <div id="modal-producto" class="modal-overlay hidden">
@@ -401,6 +455,7 @@
             <label for="user-rol">Rol:</label>
             <select id="user-rol" required>
               <option value="cliente">Cliente</option>
+              <option value="vendedor">Vendedor</option>
               <option value="admin">Administrador</option>
             </select>
           </div>

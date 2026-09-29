@@ -37,7 +37,7 @@ function verificarAdmin(req, res, next) {
   if (!usuarioId) {
     return res.status(401).json({
       ok: false,
-      mensaje: "No has iniciado sesión"
+      mensaje: "No has iniciado sesión",
     });
   }
 
@@ -48,21 +48,21 @@ function verificarAdmin(req, res, next) {
       console.log(err);
       return res.status(500).json({
         ok: false,
-        mensaje: "Error al verificar permisos"
+        mensaje: "Error al verificar permisos",
       });
     }
 
     if (resultado.length === 0) {
       return res.status(401).json({
         ok: false,
-        mensaje: "Usuario no encontrado"
+        mensaje: "Usuario no encontrado",
       });
     }
 
     if (resultado[0].rol !== "admin") {
       return res.status(403).json({
         ok: false,
-        mensaje: "No tienes permisos de administrador"
+        mensaje: "No tienes permisos de administrador",
       });
     }
 
@@ -76,10 +76,11 @@ app.use((err, req, res, next) => {
   next();
 });
 
-// Página principal Registro
+// Página principal
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "../html/Registri.html"));
+  res.sendFile(path.join(__dirname, "../html/Portada.html"));
 });
+//Las páginas
 app.get("/Registri.html", (req, res) => {
   res.sendFile(path.join(__dirname, "../html/Registri.html"));
 });
@@ -104,6 +105,7 @@ app.get("/perfil.html", (req, res) => {
 app.get("/favoritos.html", (req, res) => {
   res.sendFile(path.join(__dirname, "../html/favoritos.html"));
 });
+//Registro de usuario
 app.post("/registro", (req, res) => {
   const { usuario, correo, contraseña } = req.body;
 
@@ -118,6 +120,140 @@ app.post("/registro", (req, res) => {
 
     res.json({ ok: true });
   });
+});
+
+// REGISTRO DE VENDEDOR
+
+app.post("/registro-vendedor", (req, res) => {
+  const {
+    nombre_persona,
+    cedula,
+    nombre_marca,
+    correo,
+    contraseña,
+    instagram,
+    tiktok,
+    facebook,
+    sitio_web,
+  } = req.body;
+
+  // ==========================================
+  // VALIDAR CAMPOS OBLIGATORIOS
+  // ==========================================
+
+  if (
+    !nombre_persona ||
+    !cedula ||
+    !nombre_marca ||
+    !correo ||
+    !contraseña ||
+    !instagram
+  ) {
+    return res.json({
+      ok: false,
+      mensaje: "Completa todos los campos obligatorios",
+    });
+  }
+
+  // ==========================================
+  // CREAR USUARIO
+  // ==========================================
+
+  const sqlUsuario = `
+  INSERT INTO usuarios
+  (usuario, correo, contraseña, rol)
+  VALUES (?, ?, ?, ?)
+  `;
+
+  conexion.query(
+    sqlUsuario,
+    [nombre_marca, correo, contraseña, "vendedor"],
+    (err, resultadoUsuario) => {
+      if (err) {
+        console.error("Error al crear usuario vendedor:", err);
+
+        // Error por correo o usuario repetido
+        if (err.code === "ER_DUP_ENTRY") {
+          return res.json({
+            ok: false,
+            mensaje: "El correo o nombre de marca ya está registrado",
+          });
+        }
+
+        return res.json({
+          ok: false,
+          mensaje: "No se pudo crear la cuenta",
+        });
+      }
+
+      // ID del usuario recién creado
+      const usuarioId = resultadoUsuario.insertId;
+
+      // ==========================================
+      // CREAR SOLICITUD DE VENDEDOR
+      // ==========================================
+
+      const sqlSolicitud = `
+        INSERT INTO solicitudes_vendedores
+        (
+          usuario_id,
+          nombre_persona,
+          cedula,
+          nombre_marca,
+          instagram,
+          tiktok,
+          facebook,
+          sitio_web
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `;
+
+      conexion.query(
+        sqlSolicitud,
+        [
+          usuarioId,
+          nombre_persona,
+          cedula,
+          nombre_marca,
+          instagram,
+          tiktok || null,
+          facebook || null,
+          sitio_web || null,
+        ],
+        (errSolicitud, resultadoSolicitud) => {
+          if (errSolicitud) {
+            console.error(
+              "Error al crear solicitud de vendedor:",
+              errSolicitud,
+            );
+
+            // Si la solicitud no pudo crearse,
+            // eliminamos el usuario que acabamos de crear.
+
+            const sqlEliminar = "DELETE FROM usuarios WHERE id = ?";
+
+            conexion.query(sqlEliminar, [usuarioId], () => {});
+
+            return res.json({
+              ok: false,
+              mensaje: "No se pudo crear la solicitud de vendedor",
+            });
+          }
+
+          // ==========================================
+          // TODO CORRECTO
+          // ==========================================
+
+          res.json({
+            ok: true,
+            mensaje: "Solicitud de vendedor enviada correctamente",
+            id_usuario: usuarioId,
+            id_solicitud: resultadoSolicitud.insertId,
+          });
+        },
+      );
+    },
+  );
 });
 //Login
 app.post("/login", (req, res) => {
@@ -176,13 +312,13 @@ app.get("/admin/usuarios", verificarAdmin, (req, res) => {
 
       return res.status(500).json({
         ok: false,
-        mensaje: "Error al obtener los usuarios"
+        mensaje: "Error al obtener los usuarios",
       });
     }
 
     res.json({
       ok: true,
-      usuarios: resultado
+      usuarios: resultado,
     });
   });
 });
@@ -197,7 +333,7 @@ app.put("/admin/usuarios/:id", verificarAdmin, (req, res) => {
   if (!usuario || !correo || !rol) {
     return res.status(400).json({
       ok: false,
-      mensaje: "Todos los campos son obligatorios"
+      mensaje: "Todos los campos son obligatorios",
     });
   }
 
@@ -212,20 +348,20 @@ app.put("/admin/usuarios/:id", verificarAdmin, (req, res) => {
       console.log("Error al editar usuario:", err);
       return res.status(500).json({
         ok: false,
-        mensaje: "No se pudo editar el usuario"
+        mensaje: "No se pudo editar el usuario",
       });
     }
 
     if (resultado.affectedRows === 0) {
       return res.status(404).json({
         ok: false,
-        mensaje: "Usuario no encontrado"
+        mensaje: "Usuario no encontrado",
       });
     }
 
     res.json({
       ok: true,
-      mensaje: "Usuario actualizado correctamente"
+      mensaje: "Usuario actualizado correctamente",
     });
   });
 });
@@ -240,7 +376,7 @@ app.delete("/admin/usuarios/:id", verificarAdmin, (req, res) => {
   if (String(id) === String(adminId)) {
     return res.status(400).json({
       ok: false,
-      mensaje: "No puedes eliminar tu propia cuenta de administrador"
+      mensaje: "No puedes eliminar tu propia cuenta de administrador",
     });
   }
 
@@ -251,24 +387,577 @@ app.delete("/admin/usuarios/:id", verificarAdmin, (req, res) => {
       console.log("Error al eliminar usuario:", err);
       return res.status(500).json({
         ok: false,
-        mensaje: "No se pudo eliminar el usuario"
+        mensaje: "No se pudo eliminar el usuario",
       });
     }
 
     if (resultado.affectedRows === 0) {
       return res.status(404).json({
         ok: false,
-        mensaje: "Usuario no encontrado"
+        mensaje: "Usuario no encontrado",
       });
     }
 
     res.json({
       ok: true,
-      mensaje: "Usuario eliminado correctamente"
+      mensaje: "Usuario eliminado correctamente",
     });
   });
 });
+// ===============================
+// ADMIN - VER SOLICITUDES DE VENDEDORES
+// ===============================
 
+app.get("/admin/solicitudes-vendedores", verificarAdmin, (req, res) => {
+  const sql = `
+    SELECT
+      sv.id,
+      sv.usuario_id,
+      sv.nombre_persona,
+      sv.cedula,
+      sv.nombre_marca,
+      sv.instagram,
+      sv.tiktok,
+      sv.facebook,
+      sv.sitio_web,
+      sv.estado,
+      sv.motivo_rechazo,
+      sv.fecha_solicitud,
+      u.correo
+    FROM solicitudes_vendedores sv
+    INNER JOIN usuarios u ON sv.usuario_id = u.id
+    ORDER BY sv.id DESC
+  `;
+
+  conexion.query(sql, (err, resultado) => {
+    if (err) {
+      console.log("Error al consultar solicitudes:", err);
+
+      return res.status(500).json({
+        ok: false,
+        mensaje: "Error al obtener las solicitudes",
+      });
+    }
+
+    res.json({
+      ok: true,
+      solicitudes: resultado,
+    });
+  });
+});
+// ===============================
+// ADMIN - VER SOLICITUDES DE PRODUCTOS
+// ===============================
+
+app.get("/admin/solicitudes-productos", verificarAdmin, (req, res) => {
+  const sql = `
+    SELECT
+      sp.id,
+      sp.vendedor_id,
+      sp.nombre,
+      sp.descripcion,
+      sp.precio,
+      sp.imagen,
+      sp.stock,
+      sp.estado,
+      sp.motivo_rechazo,
+      sp.fecha_solicitud,
+      u.usuario,
+      u.correo,
+      sv.nombre_marca
+    FROM solicitudes_productos sp
+    INNER JOIN usuarios u
+      ON sp.vendedor_id = u.id
+    INNER JOIN solicitudes_vendedores sv
+      ON sp.vendedor_id = sv.usuario_id
+    WHERE sv.estado = 'aprobado'
+    ORDER BY sp.id DESC
+  `;
+
+  conexion.query(sql, (err, resultado) => {
+    if (err) {
+      console.log("Error al consultar solicitudes de productos:", err);
+
+      return res.status(500).json({
+        ok: false,
+        mensaje: "Error al obtener las solicitudes de productos",
+      });
+    }
+
+    res.json({
+      ok: true,
+      solicitudes: resultado,
+    });
+  });
+});
+// Aprobar solicitud de producto
+app.put(
+  "/admin/solicitudes-productos/:id/aprobar",
+  verificarAdmin,
+  (req, res) => {
+    const solicitudId = req.params.id;
+
+    const sqlSolicitud = `
+      SELECT *
+      FROM solicitudes_productos
+      WHERE id = ?
+    `;
+
+    conexion.query(sqlSolicitud, [solicitudId], (err, resultado) => {
+      if (err) {
+        console.log("Error al consultar solicitud de producto:", err);
+
+        return res.status(500).json({
+          ok: false,
+          mensaje: "Error al consultar la solicitud",
+        });
+      }
+
+      if (resultado.length === 0) {
+        return res.status(404).json({
+          ok: false,
+          mensaje: "Solicitud de producto no encontrada",
+        });
+      }
+
+      const solicitud = resultado[0];
+
+      if (solicitud.estado === "aprobado") {
+        return res.json({
+          ok: false,
+          mensaje: "Esta solicitud ya fue aprobada",
+        });
+      }
+
+      if (solicitud.estado === "rechazado") {
+        return res.json({
+          ok: false,
+          mensaje: "Esta solicitud ya fue rechazada",
+        });
+      }
+
+      const sqlProducto = `
+  INSERT INTO productos
+  (
+    nombre,
+    descripcion,
+    precio,
+    imagen,
+    stock,
+    vendedor_id
+  )
+  VALUES (?, ?, ?, ?, ?, ?)
+`;
+
+      conexion.query(
+        sqlProducto,
+        [
+          solicitud.nombre,
+          solicitud.descripcion,
+          solicitud.precio,
+          solicitud.imagen,
+          solicitud.stock,
+          solicitud.vendedor_id,
+        ],
+        (err, resultadoProducto) => {
+          if (err) {
+            console.log("Error al crear producto:", err);
+
+            return res.status(500).json({
+              ok: false,
+              mensaje: "No se pudo crear el producto",
+            });
+          }
+
+          const sqlActualizar = `
+              UPDATE solicitudes_productos
+              SET estado = 'aprobado',
+                  motivo_rechazo = NULL
+              WHERE id = ?
+            `;
+
+          conexion.query(sqlActualizar, [solicitudId], (err) => {
+            if (err) {
+              console.log("Error al actualizar solicitud:", err);
+
+              return res.status(500).json({
+                ok: false,
+                mensaje:
+                  "El producto fue creado, pero no se pudo actualizar la solicitud",
+              });
+            }
+
+            res.json({
+              ok: true,
+              mensaje: "Producto aprobado y publicado correctamente",
+              id_producto: resultadoProducto.insertId,
+            });
+          });
+        },
+      );
+    });
+  },
+);
+// Rechazar solicitud de producto
+app.put(
+  "/admin/solicitudes-productos/:id/rechazar",
+  verificarAdmin,
+  (req, res) => {
+    const solicitudId = req.params.id;
+    const { motivo } = req.body;
+
+    if (!motivo || motivo.trim() === "") {
+      return res.status(400).json({
+        ok: false,
+        mensaje: "Debes indicar el motivo del rechazo",
+      });
+    }
+
+    const sql = `
+      UPDATE solicitudes_productos
+      SET estado = 'rechazado',
+          motivo_rechazo = ?
+      WHERE id = ?
+        AND estado = 'pendiente'
+    `;
+
+    conexion.query(sql, [motivo.trim(), solicitudId], (err, resultado) => {
+      if (err) {
+        console.log("Error al rechazar producto:", err);
+
+        return res.status(500).json({
+          ok: false,
+          mensaje: "No se pudo rechazar la solicitud",
+        });
+      }
+
+      if (resultado.affectedRows === 0) {
+        return res.status(404).json({
+          ok: false,
+          mensaje: "Solicitud no encontrada o ya fue procesada",
+        });
+      }
+
+      res.json({
+        ok: true,
+        mensaje: "Solicitud de producto rechazada correctamente",
+      });
+    });
+  },
+);
+
+// ===============================
+// ADMIN - APROBAR VENDEDOR
+// ===============================
+
+app.put(
+  "/admin/solicitudes-vendedores/:id/aprobar",
+  verificarAdmin,
+  (req, res) => {
+    const solicitudId = req.params.id;
+
+    const sqlSolicitud = `
+      SELECT usuario_id, estado
+      FROM solicitudes_vendedores
+      WHERE id = ?
+    `;
+
+    conexion.query(sqlSolicitud, [solicitudId], (err, resultado) => {
+      if (err) {
+        console.log("Error al consultar solicitud:", err);
+
+        return res.status(500).json({
+          ok: false,
+          mensaje: "Error al consultar la solicitud",
+        });
+      }
+
+      if (resultado.length === 0) {
+        return res.status(404).json({
+          ok: false,
+          mensaje: "Solicitud no encontrada",
+        });
+      }
+
+      const solicitud = resultado[0];
+
+      if (solicitud.estado === "aprobado") {
+        return res.json({
+          ok: false,
+          mensaje: "Esta solicitud ya fue aprobada",
+        });
+      }
+
+      const usuarioId = solicitud.usuario_id;
+
+      // Cambiar el estado de la solicitud
+      const actualizarSolicitud = `
+          UPDATE solicitudes_vendedores
+          SET estado = 'aprobado',
+              motivo_rechazo = NULL
+          WHERE id = ?
+        `;
+
+      conexion.query(actualizarSolicitud, [solicitudId], (err) => {
+        if (err) {
+          console.log("Error al aprobar solicitud:", err);
+
+          return res.status(500).json({
+            ok: false,
+            mensaje: "No se pudo aprobar la solicitud",
+          });
+        }
+
+        // Convertir al usuario en vendedor
+        const actualizarUsuario = `
+              UPDATE usuarios
+              SET rol = 'vendedor'
+              WHERE id = ?
+            `;
+
+        conexion.query(actualizarUsuario, [usuarioId], (err) => {
+          if (err) {
+            console.log("Error al actualizar rol del usuario:", err);
+
+            return res.status(500).json({
+              ok: false,
+              mensaje:
+                "La solicitud se aprobó, pero no se pudo actualizar el rol",
+            });
+          }
+
+          res.json({
+            ok: true,
+            mensaje: "Vendedor aprobado correctamente",
+          });
+        });
+      });
+    });
+  },
+);
+
+// ===============================
+// ADMIN - RECHAZAR VENDEDOR
+// ===============================
+
+app.put(
+  "/admin/solicitudes-vendedores/:id/rechazar",
+  verificarAdmin,
+  (req, res) => {
+    const solicitudId = req.params.id;
+    const { motivo } = req.body;
+
+    if (!motivo || motivo.trim() === "") {
+      return res.status(400).json({
+        ok: false,
+        mensaje: "Debes indicar el motivo del rechazo",
+      });
+    }
+
+    const sql = `
+      UPDATE solicitudes_vendedores
+      SET estado = 'rechazado',
+          motivo_rechazo = ?
+      WHERE id = ?
+    `;
+
+    conexion.query(sql, [motivo.trim(), solicitudId], (err, resultado) => {
+      if (err) {
+        console.log("Error al rechazar solicitud:", err);
+
+        return res.status(500).json({
+          ok: false,
+          mensaje: "No se pudo rechazar la solicitud",
+        });
+      }
+
+      if (resultado.affectedRows === 0) {
+        return res.status(404).json({
+          ok: false,
+          mensaje: "Solicitud no encontrada",
+        });
+      }
+
+      res.json({
+        ok: true,
+        mensaje: "Solicitud rechazada correctamente",
+      });
+    });
+  },
+);
+// ===============================
+// VENDEDOR - OBTENER INFORMACIÓN DE SU MARCA
+// ===============================
+
+app.get("/vendedor/:id", (req, res) => {
+  const usuarioId = req.params.id;
+
+  const sql = `
+    SELECT
+      u.id,
+      u.usuario,
+      u.correo,
+      u.rol,
+      sv.nombre_persona,
+      sv.cedula,
+      sv.nombre_marca,
+      sv.instagram,
+      sv.tiktok,
+      sv.facebook,
+      sv.sitio_web,
+      sv.estado
+    FROM usuarios u
+    INNER JOIN solicitudes_vendedores sv
+      ON u.id = sv.usuario_id
+    WHERE u.id = ?
+      AND u.rol = 'vendedor'
+      AND sv.estado = 'aprobado'
+    ORDER BY sv.id DESC
+    LIMIT 1
+  `;
+
+  conexion.query(sql, [usuarioId], (err, resultado) => {
+    if (err) {
+      console.log("Error al obtener información del vendedor:", err);
+
+      return res.status(500).json({
+        ok: false,
+        mensaje: "Error al obtener la información del vendedor",
+      });
+    }
+
+    if (resultado.length === 0) {
+      return res.status(404).json({
+        ok: false,
+        mensaje: "Vendedor no encontrado o no aprobado",
+      });
+    }
+
+    res.json({
+      ok: true,
+      vendedor: resultado[0],
+    });
+  });
+});
+// ===============================
+// VENDEDOR - SOLICITAR PRODUCTO
+// ===============================
+
+app.post("/vendedor/productos", (req, res) => {
+  const { vendedor_id, nombre, descripcion, precio, imagen, stock } = req.body;
+
+  if (
+    !vendedor_id ||
+    !nombre ||
+    !descripcion ||
+    precio === undefined ||
+    stock === undefined
+  ) {
+    return res.status(400).json({
+      ok: false,
+      mensaje: "Completa todos los campos obligatorios",
+    });
+  }
+
+  const verificarVendedor = `
+    SELECT id
+    FROM usuarios
+    WHERE id = ?
+      AND rol = 'vendedor'
+  `;
+
+  conexion.query(verificarVendedor, [vendedor_id], (err, resultado) => {
+    if (err) {
+      console.log("Error al verificar vendedor:", err);
+
+      return res.status(500).json({
+        ok: false,
+        mensaje: "Error al verificar el vendedor",
+      });
+    }
+
+    if (resultado.length === 0) {
+      return res.status(403).json({
+        ok: false,
+        mensaje: "El usuario no es un vendedor autorizado",
+      });
+    }
+
+    const sql = `
+        INSERT INTO solicitudes_productos
+        (
+          vendedor_id,
+          nombre,
+          descripcion,
+          precio,
+          imagen,
+          stock
+        )
+        VALUES (?, ?, ?, ?, ?, ?)
+      `;
+
+    conexion.query(
+      sql,
+      [
+        vendedor_id,
+        nombre.trim(),
+        descripcion.trim(),
+        precio,
+        imagen || null,
+        stock,
+      ],
+      (err, resultado) => {
+        if (err) {
+          console.log("Error al crear solicitud de producto:", err);
+
+          return res.status(500).json({
+            ok: false,
+            mensaje: "No se pudo enviar la solicitud",
+          });
+        }
+
+        res.json({
+          ok: true,
+          mensaje: "Solicitud de producto enviada correctamente",
+          id_solicitud: resultado.insertId,
+        });
+      },
+    );
+  });
+});
+//id del vendedor y sus productos
+app.get("/vendedor/:id/productos", (req, res) => {
+  const vendedorId = req.params.id;
+
+  const sql = `
+    SELECT
+      id,
+      nombre,
+      descripcion,
+      precio,
+      imagen,
+      stock
+    FROM productos
+    WHERE vendedor_id = ?
+    ORDER BY id DESC
+  `;
+
+  conexion.query(sql, [vendedorId], (err, resultado) => {
+    if (err) {
+      console.log("Error al obtener productos del vendedor:", err);
+
+      return res.status(500).json({
+        ok: false,
+        mensaje: "Error al obtener los productos"
+      });
+    }
+
+    res.json({
+      ok: true,
+      productos: resultado
+    });
+  });
+});
 //Pefil
 app.get("/perfil/:id", (req, res) => {
   const id = req.params.id;
@@ -333,7 +1022,6 @@ app.get("/productos", (req, res) => {
 // ===============================
 
 app.get("/admin/productos", verificarAdmin, (req, res) => {
-
   const sql = `
     SELECT id, nombre, descripcion, precio, imagen, stock
     FROM productos
@@ -341,42 +1029,32 @@ app.get("/admin/productos", verificarAdmin, (req, res) => {
   `;
 
   conexion.query(sql, (err, resultado) => {
-
     if (err) {
       console.log("Error al consultar productos:", err);
 
       return res.status(500).json({
         ok: false,
-        mensaje: "Error al obtener los productos"
+        mensaje: "Error al obtener los productos",
       });
     }
 
     res.json({
       ok: true,
-      productos: resultado
+      productos: resultado,
     });
-
   });
-
 });
 // ===============================
 // ADMIN - AGREGAR PRODUCTO
 // ===============================
 
 app.post("/admin/productos", verificarAdmin, (req, res) => {
-
-  const {
-    nombre,
-    descripcion,
-    precio,
-    imagen,
-    stock
-  } = req.body;
+  const { nombre, descripcion, precio, imagen, stock } = req.body;
 
   if (!nombre || !descripcion || !precio || !imagen || stock === undefined) {
     return res.status(400).json({
       ok: false,
-      mensaje: "Todos los campos son obligatorios"
+      mensaje: "Todos los campos son obligatorios",
     });
   }
 
@@ -390,46 +1068,36 @@ app.post("/admin/productos", verificarAdmin, (req, res) => {
     sql,
     [nombre, descripcion, precio, imagen, stock],
     (err, resultado) => {
-
       if (err) {
         console.log("Error al agregar producto:", err);
 
         return res.status(500).json({
           ok: false,
-          mensaje: "No se pudo agregar el producto"
+          mensaje: "No se pudo agregar el producto",
         });
       }
 
       res.json({
         ok: true,
         mensaje: "Producto agregado correctamente",
-        id: resultado.insertId
+        id: resultado.insertId,
       });
-
-    }
+    },
   );
-
 });
 // ===============================
 // ADMIN - EDITAR PRODUCTO
 // ===============================
 
 app.put("/admin/productos/:id", verificarAdmin, (req, res) => {
-
   const id = req.params.id;
 
-  const {
-    nombre,
-    descripcion,
-    precio,
-    imagen,
-    stock
-  } = req.body;
+  const { nombre, descripcion, precio, imagen, stock } = req.body;
 
   if (!nombre || !descripcion || !precio || !imagen || stock === undefined) {
     return res.status(400).json({
       ok: false,
-      mensaje: "Todos los campos son obligatorios"
+      mensaje: "Todos los campos son obligatorios",
     });
   }
 
@@ -447,74 +1115,66 @@ app.put("/admin/productos/:id", verificarAdmin, (req, res) => {
     sql,
     [nombre, descripcion, precio, imagen, stock, id],
     (err, resultado) => {
-
       if (err) {
         console.log("Error al editar producto:", err);
 
         return res.status(500).json({
           ok: false,
-          mensaje: "No se pudo editar el producto"
+          mensaje: "No se pudo editar el producto",
         });
       }
 
       if (resultado.affectedRows === 0) {
         return res.status(404).json({
           ok: false,
-          mensaje: "Producto no encontrado"
+          mensaje: "Producto no encontrado",
         });
       }
 
       res.json({
         ok: true,
-        mensaje: "Producto actualizado correctamente"
+        mensaje: "Producto actualizado correctamente",
       });
-
-    }
+    },
   );
-
 });
 // ===============================
 // ADMIN - ELIMINAR PRODUCTO
 // ===============================
 
 app.delete("/admin/productos/:id", verificarAdmin, (req, res) => {
-
   const id = req.params.id;
 
   const sql = "DELETE FROM productos WHERE id = ?";
 
   conexion.query(sql, [id], (err, resultado) => {
-
     if (err) {
       console.log("Error al eliminar producto:", err);
 
       return res.status(500).json({
         ok: false,
-        mensaje: "No se pudo eliminar el producto"
+        mensaje: "No se pudo eliminar el producto",
       });
     }
 
     if (resultado.affectedRows === 0) {
       return res.status(404).json({
         ok: false,
-        mensaje: "Producto no encontrado"
+        mensaje: "Producto no encontrado",
       });
     }
 
     res.json({
       ok: true,
-      mensaje: "Producto eliminado correctamente"
+      mensaje: "Producto eliminado correctamente",
     });
-
   });
-
 });
 // ===============================
 // ADMIN - VER STOCK
 // ===============================
 
 app.get("/admin/stock", verificarAdmin, (req, res) => {
-
   const sql = `
     SELECT id, nombre, stock
     FROM productos
@@ -522,23 +1182,20 @@ app.get("/admin/stock", verificarAdmin, (req, res) => {
   `;
 
   conexion.query(sql, (err, resultado) => {
-
     if (err) {
       console.log("Error al consultar stock:", err);
 
       return res.status(500).json({
         ok: false,
-        mensaje: "No se pudo consultar el stock"
+        mensaje: "No se pudo consultar el stock",
       });
     }
 
     res.json({
       ok: true,
-      productos: resultado
+      productos: resultado,
     });
-
   });
-
 });
 // ===============================
 // ADMINISTRADOR - CUPONES
@@ -566,10 +1223,7 @@ app.get("/admin/cupones", (req, res) => {
       });
     }
 
-    if (
-      resultadoAdmin.length === 0 ||
-      resultadoAdmin[0].rol !== "admin"
-    ) {
+    if (resultadoAdmin.length === 0 || resultadoAdmin[0].rol !== "admin") {
       return res.status(403).json({
         ok: false,
         mensaje: "No tienes permisos de administrador",
@@ -643,10 +1297,7 @@ app.post("/admin/cupones", (req, res) => {
       });
     }
 
-    if (
-      resultadoAdmin.length === 0 ||
-      resultadoAdmin[0].rol !== "admin"
-    ) {
+    if (resultadoAdmin.length === 0 || resultadoAdmin[0].rol !== "admin") {
       return res.status(403).json({
         ok: false,
         mensaje: "No tienes permisos de administrador",
@@ -691,7 +1342,7 @@ app.post("/admin/cupones", (req, res) => {
           mensaje: "Cupón creado correctamente",
           id: resultado.insertId,
         });
-      }
+      },
     );
   });
 });
@@ -733,10 +1384,7 @@ app.put("/admin/cupones/:id", (req, res) => {
       });
     }
 
-    if (
-      resultadoAdmin.length === 0 ||
-      resultadoAdmin[0].rol !== "admin"
-    ) {
+    if (resultadoAdmin.length === 0 || resultadoAdmin[0].rol !== "admin") {
       return res.status(403).json({
         ok: false,
         mensaje: "No tienes permisos de administrador",
@@ -751,12 +1399,7 @@ app.put("/admin/cupones/:id", (req, res) => {
 
     conexion.query(
       sql,
-      [
-        codigo.trim().toUpperCase(),
-        descuento,
-        producto_id,
-        idCupon,
-      ],
+      [codigo.trim().toUpperCase(), descuento, producto_id, idCupon],
       (error, resultado) => {
         if (error) {
           console.error("Error al editar cupón:", error);
@@ -785,7 +1428,7 @@ app.put("/admin/cupones/:id", (req, res) => {
           ok: true,
           mensaje: "Cupón actualizado correctamente",
         });
-      }
+      },
     );
   });
 });
@@ -811,10 +1454,7 @@ app.delete("/admin/cupones/:id", (req, res) => {
       });
     }
 
-    if (
-      resultadoAdmin.length === 0 ||
-      resultadoAdmin[0].rol !== "admin"
-    ) {
+    if (resultadoAdmin.length === 0 || resultadoAdmin[0].rol !== "admin") {
       return res.status(403).json({
         ok: false,
         mensaje: "No tienes permisos de administrador",
@@ -915,7 +1555,7 @@ app.put("/admin/stock/:id", verificarAdmin, (req, res) => {
   if (stock === undefined || stock === null || Number(stock) < 0) {
     return res.status(400).json({
       ok: false,
-      mensaje: "Proporcione una cantidad de stock válida"
+      mensaje: "Proporcione una cantidad de stock válida",
     });
   }
 
@@ -926,20 +1566,20 @@ app.put("/admin/stock/:id", verificarAdmin, (req, res) => {
       console.log("Error al actualizar stock:", err);
       return res.status(500).json({
         ok: false,
-        mensaje: "No se pudo actualizar el stock"
+        mensaje: "No se pudo actualizar el stock",
       });
     }
 
     if (resultado.affectedRows === 0) {
       return res.status(404).json({
         ok: false,
-        mensaje: "Producto no encontrado"
+        mensaje: "Producto no encontrado",
       });
     }
 
     res.json({
       ok: true,
-      mensaje: "Stock actualizado correctamente"
+      mensaje: "Stock actualizado correctamente",
     });
   });
 });
@@ -972,7 +1612,6 @@ app.get("/productos/:id", (req, res) => {
       producto: resultado[0],
     });
   });
-
 });
 // ===============================
 // FAVORITOS

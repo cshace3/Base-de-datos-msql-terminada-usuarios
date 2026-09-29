@@ -4,94 +4,501 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Registro | Polar'Is</title>
+
     <link rel="stylesheet" href="../css styles/styleregistr.css">
     <link rel="stylesheet" href="/css/styleregistr.css">
-    <!-- FontAwesome icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
 <body>
+
     <div class="background-decor">
         <div class="circle circle-1"></div>
         <div class="circle circle-2"></div>
     </div>
 
     <main class="container">
+
         <div class="contenedor">
+
+            <!-- LOGO -->
             <div class="card-header">
+
                 <div class="brand-logo">
-                    <img src="../img/Logo1.png" onerror="this.src='/img/Logo1.png'" alt="Logo Polar'Is">
+                    <img src="../img/Logo1.png"
+                        onerror="this.src='/img/Logo1.png'"
+                        alt="Logo Polar'Is">
                 </div>
-                <h1>Registro de Usuario</h1>
-                <p class="subtitle">Ingresa tus datos para registrarte en la plataforma</p>
+
+                <h1>Crear una cuenta</h1>
+
+                <p class="subtitle">
+                    Elige el tipo de cuenta que deseas crear
+                </p>
+
             </div>
 
-            <form onsubmit="registrar(event)" novalidate>
-                <div class="form-group">
-                    <label for="usuario">Nombre Completo</label>
-                    <div class="input-wrapper">
-                        <i class="fa-regular fa-user input-icon"></i>
-                        <input type="text" id="usuario" placeholder="Ej. Juan Pérez" required>
-                    </div>
-                </div>
 
-                <div class="form-group">
-                    <label for="fecha">Fecha de nacimiento</label>
-                    <div class="input-wrapper">
-                        <i class="fa-regular fa-calendar-days input-icon"></i>
-                        <input type="date" id="fecha" required>
-                    </div>
-                </div>
+            <!-- SELECCIÓN DEL TIPO DE CUENTA -->
 
-                <div class="form-group">
-                    <label for="correo">Correo Electrónico</label>
-                    <div class="input-wrapper">
-                        <i class="fa-regular fa-envelope input-icon"></i>
-                        <input type="email" id="correo" placeholder="correo@ejemplo.com" required>
-                    </div>
-                </div>
+            <div class="tipo-cuenta">
 
-                <div class="form-group">
-                    <label for="contraseña">Contraseña</label>
-                    <div class="input-wrapper">
-                        <i class="fa-solid fa-lock input-icon"></i>
-                        <input type="password" id="contraseña" placeholder="••••••••" required>
-                        <button type="button" class="btn-icon" onclick="togglePasswordVisibility('contraseña', this)">
-                            <i class="fa-regular fa-eye"></i>
-                        </button>
-                    </div>
-                </div>
+                <button type="button"
+                    id="btnCliente"
+                    class="tipo-btn activo"
+                    onclick="seleccionarTipoCuenta('cliente')">
 
-                <button type="submit" class="btn-primary">
-                    <span>Registrarse</span>
-                    <i class="fa-solid fa-user-plus"></i>
+                    <i class="fa-solid fa-user"></i>
+
+                    <span>Cliente</span>
+
+                    <small>
+                        Comprar productos
+                    </small>
+
                 </button>
+
+
+                <button type="button"
+                    id="btnVendedor"
+                    class="tipo-btn"
+                    onclick="seleccionarTipoCuenta('vendedor')">
+
+                    <i class="fa-solid fa-store"></i>
+
+                    <span>Vendedor</span>
+
+                    <small>
+                        Vender mi marca
+                    </small>
+
+                </button>
+
+            </div>
+
+
+            <!-- ========================= -->
+            <!-- FORMULARIO CLIENTE -->
+            <!-- ========================= -->
+
+            <form id="formCliente"
+                onsubmit="registrar(event)"
+                novalidate>
+
+                <input type="hidden"
+                    id="tipoCuenta"
+                    value="cliente">
+
+
+                <div class="form-group">
+
+                    <label for="usuario">
+                        Nombre Completo
+                    </label>
+
+                    <div class="input-wrapper">
+
+                        <i class="fa-regular fa-user input-icon"></i>
+
+                        <input type="text"
+                            id="usuario"
+                            placeholder="Ej. Juan Pérez"
+                            required>
+
+                    </div>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="fecha">
+                        Fecha de nacimiento
+                    </label>
+
+                    <div class="input-wrapper">
+
+                        <i class="fa-regular fa-calendar-days input-icon"></i>
+
+                        <input type="date"
+                            id="fecha"
+                            required>
+
+                    </div>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="correo">
+                        Correo Electrónico
+                    </label>
+
+                    <div class="input-wrapper">
+
+                        <i class="fa-regular fa-envelope input-icon"></i>
+
+                        <input type="email"
+                            id="correo"
+                            placeholder="correo@ejemplo.com"
+                            required>
+
+                    </div>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="contraseña">
+                        Contraseña
+                    </label>
+
+                    <div class="input-wrapper">
+
+                        <i class="fa-solid fa-lock input-icon"></i>
+
+                        <input type="password"
+                            id="contraseña"
+                            placeholder="••••••••"
+                            required>
+
+                        <button type="button"
+                            class="btn-icon"
+                            onclick="togglePasswordVisibility('contraseña', this)">
+
+                            <i class="fa-regular fa-eye"></i>
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <button type="submit"
+                    class="btn-primary">
+
+                    <span>Registrarse</span>
+
+                    <i class="fa-solid fa-user-plus"></i>
+
+                </button>
+
             </form>
+
+
+            <!-- ========================= -->
+            <!-- FORMULARIO VENDEDOR -->
+            <!-- ========================= -->
+
+            <form id="formVendedor"
+                onsubmit="registrarVendedor(event)"
+                novalidate
+                style="display: none;">
+
+                <div class="form-group">
+
+                    <label for="nombre_persona">
+                        Nombre de la persona
+                    </label>
+
+                    <div class="input-wrapper">
+
+                        <i class="fa-regular fa-user input-icon"></i>
+
+                        <input type="text"
+                            id="nombre_persona"
+                            placeholder="Ej. Juan Pérez"
+                            required>
+
+                    </div>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="cedula">
+                        Cédula
+                    </label>
+
+                    <div class="input-wrapper">
+
+                        <i class="fa-regular fa-id-card input-icon"></i>
+
+                        <input type="text"
+                            id="cedula"
+                            placeholder="Número de identificación"
+                            required>
+
+                    </div>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="nombre_marca">
+                        Nombre de la marca
+                    </label>
+
+                    <div class="input-wrapper">
+
+                        <i class="fa-solid fa-store input-icon"></i>
+
+                        <input type="text"
+                            id="nombre_marca"
+                            placeholder="Ej. Polar Street"
+                            required>
+
+                    </div>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="correoVendedor">
+                        Correo Electrónico
+                    </label>
+
+                    <div class="input-wrapper">
+
+                        <i class="fa-regular fa-envelope input-icon"></i>
+
+                        <input type="email"
+                            id="correoVendedor"
+                            placeholder="correo@ejemplo.com"
+                            required>
+
+                    </div>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="contraseñaVendedor">
+                        Contraseña
+                    </label>
+
+                    <div class="input-wrapper">
+
+                        <i class="fa-solid fa-lock input-icon"></i>
+
+                        <input type="password"
+                            id="contraseñaVendedor"
+                            placeholder="••••••••"
+                            required>
+
+                        <button type="button"
+                            class="btn-icon"
+                            onclick="togglePasswordVisibility('contraseñaVendedor', this)">
+
+                            <i class="fa-regular fa-eye"></i>
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="instagram">
+                        Instagram <span>(obligatorio)</span>
+                    </label>
+
+                    <div class="input-wrapper">
+
+                        <i class="fa-brands fa-instagram input-icon"></i>
+
+                        <input type="url"
+                            id="instagram"
+                            placeholder="https://instagram.com/tu_marca"
+                            required>
+
+                    </div>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="tiktok">
+                        TikTok <span>(opcional)</span>
+                    </label>
+
+                    <div class="input-wrapper">
+
+                        <i class="fa-brands fa-tiktok input-icon"></i>
+
+                        <input type="url"
+                            id="tiktok"
+                            placeholder="https://tiktok.com/@tu_marca">
+
+                    </div>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="facebook">
+                        Facebook <span>(opcional)</span>
+                    </label>
+
+                    <div class="input-wrapper">
+
+                        <i class="fa-brands fa-facebook input-icon"></i>
+
+                        <input type="url"
+                            id="facebook"
+                            placeholder="https://facebook.com/tu_marca">
+
+                    </div>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="sitio_web">
+                        Sitio web <span>(opcional)</span>
+                    </label>
+
+                    <div class="input-wrapper">
+
+                        <i class="fa-solid fa-globe input-icon"></i>
+
+                        <input type="url"
+                            id="sitio_web"
+                            placeholder="https://tumarca.com">
+
+                    </div>
+
+                </div>
+
+
+                <button type="submit"
+                    class="btn-primary">
+
+                    <span>Enviar solicitud</span>
+
+                    <i class="fa-solid fa-paper-plane"></i>
+
+                </button>
+
+            </form>
+
+
+            <!-- MENSAJE -->
 
             <p id="mensaje"></p>
 
+
+            <!-- VOLVER AL LOGIN -->
+
             <div class="nav-links">
-                <a href="inicio.html">¿Ya tienes una cuenta? Iniciar Sesión</a>
+
+                <a href="inicio.html">
+                    ¿Ya tienes una cuenta? Iniciar Sesión
+                </a>
+
             </div>
+
         </div>
+
     </main>
+
 
     <script src="../javascript/script.js"></script>
     <script src="/js/script.js"></script>
+
+
     <script>
-        function togglePasswordVisibility(inputId, btn) {
-            const input = document.getElementById(inputId);
-            const icon = btn.querySelector('i');
-            if (input.type === 'password') {
-                input.type = 'text';
-                icon.className = 'fa-regular fa-eye-slash';
+
+        function seleccionarTipoCuenta(tipo) {
+
+            const formCliente =
+                document.getElementById("formCliente");
+
+            const formVendedor =
+                document.getElementById("formVendedor");
+
+            const btnCliente =
+                document.getElementById("btnCliente");
+
+            const btnVendedor =
+                document.getElementById("btnVendedor");
+
+            const tipoCuenta =
+                document.getElementById("tipoCuenta");
+
+
+            tipoCuenta.value = tipo;
+
+
+            if (tipo === "cliente") {
+
+                formCliente.style.display = "block";
+                formVendedor.style.display = "none";
+
+                btnCliente.classList.add("activo");
+                btnVendedor.classList.remove("activo");
+
             } else {
-                input.type = 'password';
-                icon.className = 'fa-regular fa-eye';
+
+                formCliente.style.display = "none";
+                formVendedor.style.display = "block";
+
+                btnCliente.classList.remove("activo");
+                btnVendedor.classList.add("activo");
+
             }
+
+
+            document.getElementById("mensaje").textContent = "";
+
         }
+
+
+        function togglePasswordVisibility(inputId, btn) {
+
+            const input =
+                document.getElementById(inputId);
+
+            const icon =
+                btn.querySelector("i");
+
+
+            if (input.type === "password") {
+
+                input.type = "text";
+
+                icon.className =
+                    "fa-regular fa-eye-slash";
+
+            } else {
+
+                input.type = "password";
+
+                icon.className =
+                    "fa-regular fa-eye";
+
+            }
+
+        }
+
     </script>
+
 </body>
 
 </html>

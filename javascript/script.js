@@ -1,59 +1,176 @@
 let productosDisponibles = [];
 
-//Funcion Registrar
+//Funcion Registrar cliente
 async function registrar(event) {
   if (event) event.preventDefault();
-  let usuario = document.getElementById("usuario").value;
-  let fecha = document.getElementById("fecha").value;
-  let correo = document.getElementById("correo").value;
-  let contraseña = document.getElementById("contraseña").value;
-  let mensaje = document.getElementById("mensaje");
 
-  //Validar campos
-  if (usuario === "" || fecha === "" || correo === "" || contraseña === "") {
-    mensaje.textContent = "Todos los campos obligatorios";
+  const tipoCuenta = document.getElementById("tipoCuenta").value;
+
+  if (tipoCuenta === "cliente") {
+    const usuario = document.getElementById("usuario").value.trim();
+    const fecha = document.getElementById("fecha").value;
+    const correo = document.getElementById("correo").value.trim();
+    const contraseña = document.getElementById("contraseña").value;
+    const mensaje = document.getElementById("mensaje");
+
+    if (usuario === "" || fecha === "" || correo === "" || contraseña === "") {
+      mensaje.textContent = "Todos los campos son obligatorios";
+      mensaje.style.color = "red";
+      return;
+    }
+
+    const valCorreo = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!valCorreo.test(correo)) {
+      mensaje.textContent = "Correo inválido";
+      mensaje.style.color = "red";
+      return;
+    }
+
+    try {
+      const respuesta = await fetch("/registro", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          usuario,
+          correo,
+          contraseña,
+        }),
+      });
+
+      const datos = await respuesta.json();
+
+      if (datos.ok) {
+        mensaje.textContent = "Registro exitoso";
+        mensaje.style.color = "green";
+
+        setTimeout(() => {
+          window.location.href = "Productos.html";
+        }, 1500);
+      } else {
+        mensaje.textContent = datos.mensaje || "No se pudo registrar";
+
+        mensaje.style.color = "red";
+      }
+    } catch (err) {
+      console.error(err);
+
+      mensaje.textContent = "Error al conectar con el servidor";
+
+      mensaje.style.color = "red";
+    }
+
+    return;
+  }
+}
+//Funcion Registrar vendedor
+async function registrarVendedor(event) {
+  if (event) event.preventDefault();
+
+  const nombre_persona = document.getElementById("nombre_persona").value.trim();
+
+  const cedula = document.getElementById("cedula").value.trim();
+
+  const nombre_marca = document.getElementById("nombre_marca").value.trim();
+
+  const correo = document.getElementById("correoVendedor").value.trim();
+
+  const contraseña = document.getElementById("contraseñaVendedor").value;
+
+  const instagram = document.getElementById("instagram").value.trim();
+
+  const tiktok = document.getElementById("tiktok").value.trim();
+
+  const facebook = document.getElementById("facebook").value.trim();
+
+  const sitio_web = document.getElementById("sitio_web").value.trim();
+
+  const mensaje = document.getElementById("mensaje");
+
+  // ==========================================
+  // VALIDAR CAMPOS OBLIGATORIOS
+  // ==========================================
+
+  if (
+    nombre_persona === "" ||
+    cedula === "" ||
+    nombre_marca === "" ||
+    correo === "" ||
+    contraseña === "" ||
+    instagram === ""
+  ) {
+    mensaje.textContent = "Completa todos los campos obligatorios";
+
     mensaje.style.color = "red";
+
     return;
   }
 
-  //Validar correo
-  let valCorreo = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  // ==========================================
+  // VALIDAR CORREO
+  // ==========================================
+
+  const valCorreo = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
   if (!valCorreo.test(correo)) {
     mensaje.textContent = "Correo inválido";
+
     mensaje.style.color = "red";
+
     return;
   }
 
-  //Guardar datos
   try {
-    const respuesta = await fetch("/registro", {
+    const respuesta = await fetch("/registro-vendedor", {
       method: "POST",
+
       headers: {
         "Content-Type": "application/json",
       },
+
       body: JSON.stringify({
-        usuario,
+        nombre_persona,
+        cedula,
+        nombre_marca,
         correo,
         contraseña,
+        instagram,
+        tiktok,
+        facebook,
+        sitio_web,
       }),
     });
 
     const datos = await respuesta.json();
+
     if (datos.ok) {
-      document.getElementById("mensaje").textContent = "Registro exitoso";
-      document.getElementById("mensaje").style.color = "green";
+      mensaje.textContent =
+        "Solicitud enviada correctamente. Queda pendiente de revisión por el administrador.";
+
+      mensaje.style.color = "green";
+
+      // Limpiar formulario
+
+      document.getElementById("formVendedor").reset();
+
+      // Después de unos segundos volver al login
+
       setTimeout(() => {
-        window.location.href = "Productos.html";
-      }, 2000);
+        window.location.href = "inicio.html";
+      }, 3000);
     } else {
-      document.getElementById("mensaje").textContent = "No se pudo registrar";
-      document.getElementById("mensaje").style.color = "red";
+      mensaje.textContent = datos.mensaje || "No se pudo enviar la solicitud";
+
+      mensaje.style.color = "red";
     }
   } catch (err) {
-    document.getElementById("mensaje").textContent =
-      "Error al conectar con el servidor";
-    document.getElementById("mensaje").style.color = "red";
+    console.error(err);
+
+    mensaje.textContent = "Error al conectar con el servidor";
+
+    mensaje.style.color = "red";
   }
 }
 
@@ -112,6 +229,8 @@ async function iniciar(event) {
       setTimeout(() => {
         if (datos.rol === "admin") {
           window.location.href = "admin.html";
+        } else if (datos.rol === "vendedor") {
+          window.location.href = "vendedor.html";
         } else {
           window.location.href = "Productos.html";
         }
@@ -492,7 +611,10 @@ async function cargarCarrito() {
       let textoEtiquetaDescuento = "";
 
       // Verificar si el cupón aplica a este producto
-      if (cuponAplicado && Number(cuponAplicado.producto_id) === Number(producto.producto_id)) {
+      if (
+        cuponAplicado &&
+        Number(cuponAplicado.producto_id) === Number(producto.producto_id)
+      ) {
         descuentoItem = subtotalItem * (cuponAplicado.descuento / 100);
         descuentoTotal += descuentoItem;
         textoEtiquetaDescuento = `
@@ -1283,7 +1405,7 @@ function verificarAccesoAdmin() {
 
 // Cambiar de Pestaña en Admin
 function cambiarTab(nombreTab) {
-  const tabs = ["productos", "usuarios", "stock", "cupones"];
+  const tabs = ["productos", "usuarios", "solicitudes", "stock", "cupones"];
 
   tabs.forEach((tab) => {
     const btn = document.getElementById(`tab-btn-${tab}`);
@@ -1303,10 +1425,544 @@ function cambiarTab(nombreTab) {
   // Cargar datos según la pestaña activa
   if (nombreTab === "productos") gestionarProductos();
   if (nombreTab === "usuarios") verUsuarios();
+  if (nombreTab === "solicitudes") {
+    verSolicitudesVendedores();
+    verSolicitudesProductos();
+  }
   if (nombreTab === "stock") verStock();
   if (nombreTab === "cupones") gestionarCupones();
 }
+async function verSolicitudesVendedores() {
+  if (!verificarAccesoAdmin()) return;
 
+  const tbody = document.getElementById("tabla-solicitudes-body");
+
+  if (!tbody) return;
+
+  tbody.innerHTML = `
+    <tr>
+      <td colspan="10" class="loading">
+        Cargando solicitudes...
+      </td>
+    </tr>
+  `;
+
+  const idAdmin = localStorage.getItem("id_usuario");
+
+  try {
+    const respuesta = await fetch("/admin/solicitudes-vendedores", {
+      method: "GET",
+      headers: {
+        "usuario-id": idAdmin,
+      },
+    });
+
+    const datos = await respuesta.json();
+
+    if (!datos.ok) {
+      mostrarToastAdmin(datos.mensaje || "Error al obtener solicitudes", false);
+
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="10" class="loading">
+            Error al cargar las solicitudes.
+          </td>
+        </tr>
+      `;
+
+      return;
+    }
+
+    const solicitudes = datos.solicitudes || [];
+
+    if (solicitudes.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="10" class="loading">
+            No hay solicitudes de vendedores.
+          </td>
+        </tr>
+      `;
+
+      return;
+    }
+
+    tbody.innerHTML = "";
+
+    solicitudes.forEach((solicitud) => {
+      const tr = document.createElement("tr");
+
+      let estadoClase = "badge-cliente";
+
+      if (solicitud.estado === "aprobado") {
+        estadoClase = "badge-admin";
+      } else if (solicitud.estado === "rechazado") {
+        estadoClase = "badge-rechazado";
+      }
+
+      let instagram = solicitud.instagram
+        ? `<a href="${solicitud.instagram}" target="_blank">Ver Instagram</a>`
+        : "No registrado";
+
+      let tiktok = solicitud.tiktok
+        ? `<a href="${solicitud.tiktok}" target="_blank">Ver TikTok</a>`
+        : "No registrado";
+
+      let facebook = solicitud.facebook
+        ? `<a href="${solicitud.facebook}" target="_blank">Ver Facebook</a>`
+        : "No registrado";
+
+      let sitioWeb = solicitud.sitio_web
+        ? `<a href="${solicitud.sitio_web}" target="_blank">Visitar sitio</a>`
+        : "No registrado";
+
+      let acciones = "";
+
+      if (solicitud.estado === "pendiente") {
+        acciones = `
+          <div class="acciones-cell">
+            <button
+              class="btn-edit"
+              onclick="aprobarSolicitudVendedor(${solicitud.id})"
+            >
+              ✅ Aprobar
+            </button>
+
+            <button
+              class="btn-delete"
+              onclick="rechazarSolicitudVendedor(${solicitud.id})"
+            >
+              ❌ Rechazar
+            </button>
+          </div>
+        `;
+      } else if (solicitud.estado === "aprobado") {
+        acciones = `
+          <span class="badge badge-admin">
+            Solicitud aprobada
+          </span>
+        `;
+      } else {
+        acciones = `
+          <div>
+            <span class="badge badge-rechazado">
+              Solicitud rechazada
+            </span>
+
+            ${
+              solicitud.motivo_rechazo
+                ? `<br><small>${solicitud.motivo_rechazo}</small>`
+                : ""
+            }
+          </div>
+        `;
+      }
+
+      tr.innerHTML = `
+        <td><strong>#${solicitud.id}</strong></td>
+
+        <td>
+          ${solicitud.nombre_persona}
+          <br>
+          <small>${solicitud.correo}</small>
+        </td>
+
+        <td>${solicitud.cedula}</td>
+
+        <td>${solicitud.nombre_marca}</td>
+
+        <td>${instagram}</td>
+
+        <td>${tiktok}</td>
+
+        <td>${facebook}</td>
+
+        <td>${sitioWeb}</td>
+
+        <td>
+          <span class="badge ${estadoClase}">
+            ${solicitud.estado}
+          </span>
+        </td>
+
+        <td>
+          ${acciones}
+        </td>
+      `;
+
+      tbody.appendChild(tr);
+    });
+  } catch (error) {
+    console.error("Error al cargar solicitudes:", error);
+
+    mostrarToastAdmin("Error al conectar con el servidor", false);
+
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="10" class="loading">
+          Error al conectar con el servidor.
+        </td>
+      </tr>
+    `;
+  }
+}
+async function verSolicitudesProductos() {
+  if (!verificarAccesoAdmin()) return;
+
+  const tbody = document.getElementById("tabla-solicitudes-productos-body");
+
+  if (!tbody) return;
+
+  tbody.innerHTML = `
+    <tr>
+      <td colspan="8" class="loading">
+        Cargando solicitudes de productos...
+      </td>
+    </tr>
+  `;
+
+  const idAdmin = localStorage.getItem("id_usuario");
+
+  try {
+    const respuesta = await fetch("/admin/solicitudes-productos", {
+      method: "GET",
+      headers: {
+        "usuario-id": idAdmin,
+      },
+    });
+
+    const datos = await respuesta.json();
+
+    if (!datos.ok) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="8" class="loading">
+            ${datos.mensaje || "Error al cargar solicitudes"}
+          </td>
+        </tr>
+      `;
+
+      return;
+    }
+
+    const solicitudes = datos.solicitudes || [];
+
+    if (solicitudes.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="8" class="loading">
+            No hay solicitudes de productos.
+          </td>
+        </tr>
+      `;
+
+      return;
+    }
+
+    tbody.innerHTML = "";
+
+    solicitudes.forEach((solicitud) => {
+      const tr = document.createElement("tr");
+
+      let estadoClase = "badge-cliente";
+
+      if (solicitud.estado === "aprobado") {
+        estadoClase = "badge-admin";
+      } else if (solicitud.estado === "rechazado") {
+        estadoClase = "badge-rechazado";
+      }
+
+      let acciones = "";
+
+      if (solicitud.estado === "pendiente") {
+        acciones = `
+          <div class="acciones-cell">
+
+            <button
+              class="btn-edit"
+              onclick="aprobarSolicitudProducto(${solicitud.id})"
+            >
+              ✅ Aprobar
+            </button>
+
+            <button
+              class="btn-delete"
+              onclick="rechazarSolicitudProducto(${solicitud.id})"
+            >
+              ❌ Rechazar
+            </button>
+
+          </div>
+        `;
+      } else if (solicitud.estado === "aprobado") {
+        acciones = `
+          <span class="badge badge-admin">
+            Producto aprobado
+          </span>
+        `;
+      } else {
+        acciones = `
+          <div>
+            <span class="badge badge-rechazado">
+              Producto rechazado
+            </span>
+
+            ${
+              solicitud.motivo_rechazo
+                ? `<br><small>${solicitud.motivo_rechazo}</small>`
+                : ""
+            }
+
+          </div>
+        `;
+      }
+
+      tr.innerHTML = `
+        <td>
+          <strong>#${solicitud.id}</strong>
+        </td>
+
+        <td>
+          <strong>${solicitud.nombre}</strong>
+          <br>
+          <small>${solicitud.descripcion}</small>
+        </td>
+
+        <td>
+          ${solicitud.nombre_marca}
+        </td>
+
+        <td>
+          ${solicitud.usuario}
+          <br>
+          <small>${solicitud.correo}</small>
+        </td>
+
+        <td>
+          $${Number(solicitud.precio).toLocaleString("es-CO")}
+        </td>
+
+        <td>
+          ${solicitud.stock}
+        </td>
+
+        <td>
+          <span class="badge ${estadoClase}">
+            ${solicitud.estado}
+          </span>
+        </td>
+
+        <td>
+          ${acciones}
+        </td>
+      `;
+
+      tbody.appendChild(tr);
+    });
+  } catch (error) {
+    console.error("Error al cargar solicitudes de productos:", error);
+
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="8" class="loading">
+          Error al conectar con el servidor.
+        </td>
+      </tr>
+    `;
+  }
+}
+// Aprobar solicitud de producto
+async function aprobarSolicitudProducto(id) {
+  abrirModalConfirmacion(
+    "¿Estás seguro de que deseas aprobar este producto y publicarlo en la tienda?",
+    async () => {
+      const idAdmin = localStorage.getItem("id_usuario");
+
+      try {
+        const respuesta = await fetch(
+          `/admin/solicitudes-productos/${id}/aprobar`,
+          {
+            method: "PUT",
+            headers: {
+              "usuario-id": idAdmin,
+            },
+          },
+        );
+
+        const datos = await respuesta.json();
+
+        if (datos.ok) {
+          mostrarToastAdmin(
+            "✅ Producto aprobado y publicado correctamente",
+            true,
+          );
+
+          verSolicitudesProductos();
+
+          gestionarProductos();
+        } else {
+          mostrarToastAdmin(
+            datos.mensaje || "No se pudo aprobar el producto",
+            false,
+          );
+        }
+      } catch (error) {
+        console.error("Error al aprobar producto:", error);
+
+        mostrarToastAdmin("Error de conexión al aprobar el producto", false);
+      }
+    },
+  );
+}
+// Rechazar solicitud de producto
+async function rechazarSolicitudProducto(id) {
+  const motivo = prompt(
+    "Escribe el motivo por el cual rechazas este producto:",
+  );
+
+  if (motivo === null) {
+    return;
+  }
+
+  if (motivo.trim() === "") {
+    mostrarToastAdmin(
+      "Debes indicar un motivo para rechazar el producto",
+      false,
+    );
+
+    return;
+  }
+
+  const idAdmin = localStorage.getItem("id_usuario");
+
+  try {
+    const respuesta = await fetch(
+      `/admin/solicitudes-productos/${id}/rechazar`,
+      {
+        method: "PUT",
+
+        headers: {
+          "Content-Type": "application/json",
+          "usuario-id": idAdmin,
+        },
+
+        body: JSON.stringify({
+          motivo: motivo.trim(),
+        }),
+      },
+    );
+
+    const datos = await respuesta.json();
+
+    if (datos.ok) {
+      mostrarToastAdmin("❌ Producto rechazado correctamente", true);
+
+      verSolicitudesProductos();
+    } else {
+      mostrarToastAdmin(
+        datos.mensaje || "No se pudo rechazar el producto",
+        false,
+      );
+    }
+  } catch (error) {
+    console.error("Error al rechazar producto:", error);
+
+    mostrarToastAdmin("Error de conexión al rechazar el producto", false);
+  }
+}
+async function aprobarSolicitudVendedor(id) {
+  abrirModalConfirmacion(
+    "¿Estás seguro de que deseas aprobar esta solicitud de vendedor?",
+    async () => {
+      const idAdmin = localStorage.getItem("id_usuario");
+
+      try {
+        const respuesta = await fetch(
+          `/admin/solicitudes-vendedores/${id}/aprobar`,
+          {
+            method: "PUT",
+            headers: {
+              "usuario-id": idAdmin,
+            },
+          },
+        );
+
+        const datos = await respuesta.json();
+
+        if (datos.ok) {
+          mostrarToastAdmin("✅ Vendedor aprobado correctamente", true);
+
+          // Actualizar solicitudes
+          verSolicitudesVendedores();
+
+          // Actualizar usuarios para que aparezca como vendedor
+          verUsuarios();
+        } else {
+          mostrarToastAdmin(
+            datos.mensaje || "No se pudo aprobar la solicitud",
+            false,
+          );
+        }
+      } catch (error) {
+        console.error("Error al aprobar vendedor:", error);
+
+        mostrarToastAdmin("Error de conexión al aprobar la solicitud", false);
+      }
+    },
+  );
+}
+async function rechazarSolicitudVendedor(id) {
+  const motivo = prompt(
+    "Escribe el motivo por el cual rechazas esta solicitud:",
+  );
+
+  if (motivo === null) {
+    return;
+  }
+
+  if (motivo.trim() === "") {
+    mostrarToastAdmin(
+      "Debes indicar un motivo para rechazar la solicitud",
+      false,
+    );
+    return;
+  }
+
+  const idAdmin = localStorage.getItem("id_usuario");
+
+  try {
+    const respuesta = await fetch(
+      `/admin/solicitudes-vendedores/${id}/rechazar`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "usuario-id": idAdmin,
+        },
+        body: JSON.stringify({
+          motivo: motivo.trim(),
+        }),
+      },
+    );
+
+    const datos = await respuesta.json();
+
+    if (datos.ok) {
+      mostrarToastAdmin("❌ Solicitud rechazada correctamente", true);
+
+      verSolicitudesVendedores();
+    } else {
+      mostrarToastAdmin(
+        datos.mensaje || "No se pudo rechazar la solicitud",
+        false,
+      );
+    }
+  } catch (error) {
+    console.error("Error al rechazar vendedor:", error);
+
+    mostrarToastAdmin("Error de conexión al rechazar la solicitud", false);
+  }
+}
 // Control de Modales
 let callbackEliminar = null;
 
@@ -1375,7 +2031,12 @@ async function verUsuarios() {
     tbody.innerHTML = "";
     usuariosGlobales.forEach((u) => {
       const tr = document.createElement("tr");
-      const badgeRol = u.rol === "admin" ? "badge-admin" : "badge-cliente";
+      const badgeRol =
+        u.rol === "admin"
+          ? "badge-admin"
+          : u.rol === "vendedor"
+            ? "badge-vendedor"
+            : "badge-cliente";
 
       tr.innerHTML = `
         <td><strong>#${u.id}</strong></td>
@@ -2151,4 +2812,227 @@ const productoIdResena = parametros.get("id");
 
 if (productoIdResena && document.getElementById("lista-resenas")) {
   cargarResenas(productoIdResena);
+}
+async function cargarInformacionVendedor() {
+  const idUsuario = localStorage.getItem("id_usuario");
+
+  if (!idUsuario) {
+    window.location.href = "Registri.html";
+    return;
+  }
+
+  try {
+    const respuesta = await fetch(`/vendedor/${idUsuario}`);
+    const datos = await respuesta.json();
+
+    if (!datos.ok) {
+      alert(datos.mensaje || "No se pudo cargar la información del vendedor");
+      return;
+    }
+
+    const vendedor = datos.vendedor;
+
+    const nombreVendedor = document.getElementById("nombre-vendedor");
+    const marcaVendedor = document.getElementById("marca-vendedor");
+    const correoVendedor = document.getElementById("correo-vendedor");
+    const instagramVendedor = document.getElementById("instagram-vendedor");
+
+    if (nombreVendedor) {
+      nombreVendedor.textContent = vendedor.nombre_persona;
+    }
+
+    if (marcaVendedor) {
+      marcaVendedor.textContent = vendedor.nombre_marca;
+    }
+
+    if (correoVendedor) {
+      correoVendedor.textContent = vendedor.correo;
+    }
+
+    if (instagramVendedor) {
+      instagramVendedor.textContent = vendedor.instagram;
+    }
+  } catch (error) {
+    console.error("Error al cargar información del vendedor:", error);
+  }
+}
+document.addEventListener("DOMContentLoaded", () => {
+  if (document.getElementById("marca-vendedor")) {
+    cargarInformacionVendedor();
+  }
+});
+function cerrarSesionVendedor() {
+  localStorage.removeItem("id_usuario");
+  localStorage.removeItem("usuario");
+  localStorage.removeItem("rol");
+
+  window.location.href = "inicio.html";
+}
+function abrirFormularioProducto() {
+  const formulario = document.getElementById("formulario-producto");
+
+  if (formulario) {
+    formulario.classList.remove("oculto");
+
+    formulario.scrollIntoView({
+      behavior: "smooth",
+    });
+  }
+}
+
+function cerrarFormularioProducto() {
+  const formulario = document.getElementById("formulario-producto");
+
+  if (formulario) {
+    formulario.classList.add("oculto");
+  }
+}
+async function enviarSolicitudProducto(event) {
+  event.preventDefault();
+
+  const vendedorId = localStorage.getItem("id_usuario");
+
+  if (!vendedorId) {
+    alert("No se encontró la sesión del vendedor");
+    return;
+  }
+
+  const nombre = document.getElementById("producto-nombre").value.trim();
+
+  const descripcion = document
+    .getElementById("producto-descripcion")
+    .value.trim();
+
+  const precio = document.getElementById("producto-precio").value;
+
+  const stock = document.getElementById("producto-stock").value;
+
+  const imagen = document.getElementById("producto-imagen").value.trim();
+
+  try {
+    const respuesta = await fetch("/vendedor/productos", {
+      method: "POST",
+
+      headers: {
+        "Content-Type": "application/json",
+      },
+
+      body: JSON.stringify({
+        vendedor_id: vendedorId,
+        nombre,
+        descripcion,
+        precio,
+        imagen,
+        stock,
+      }),
+    });
+
+    const datos = await respuesta.json();
+
+    if (datos.ok) {
+      alert("✅ " + datos.mensaje);
+
+      document.getElementById("form-producto-vendedor").reset();
+
+      cerrarFormularioProducto();
+    } else {
+      alert(datos.mensaje || "No se pudo enviar la solicitud");
+    }
+  } catch (error) {
+    console.error("Error al enviar solicitud de producto:", error);
+
+    alert("Error de conexión con el servidor");
+  }
+} 
+// Mostrar productos del vendedor
+async function mostrarMisProductos() {
+  const seccion = document.getElementById("mis-productos");
+  const lista = document.getElementById("lista-mis-productos");
+
+  if (!seccion || !lista) {
+    return;
+  }
+
+  seccion.classList.remove("oculto");
+
+  lista.innerHTML = `
+    <p>Cargando productos...</p>
+  `;
+
+  const vendedorId = localStorage.getItem("id_usuario");
+
+  if (!vendedorId) {
+    lista.innerHTML = `
+      <p>No se encontró la sesión del vendedor.</p>
+    `;
+    return;
+  }
+
+  try {
+    const respuesta = await fetch(
+      `/vendedor/${vendedorId}/productos`
+    );
+
+    const datos = await respuesta.json();
+
+    if (!datos.ok) {
+      lista.innerHTML = `
+        <p>${datos.mensaje || "No se pudieron cargar los productos."}</p>
+      `;
+      return;
+    }
+
+    const productos = datos.productos || [];
+
+    if (productos.length === 0) {
+      lista.innerHTML = `
+        <p>
+          Todavía no tienes productos aprobados.
+        </p>
+      `;
+      return;
+    }
+
+    lista.innerHTML = "";
+
+    productos.forEach((producto) => {
+      const tarjeta = document.createElement("div");
+
+      tarjeta.className = "producto-vendedor";
+
+      tarjeta.innerHTML = `
+        <div class="producto-vendedor-info">
+
+          <h3>${producto.nombre}</h3>
+
+          <p>
+            ${producto.descripcion}
+          </p>
+
+          <strong>
+            $${Number(producto.precio).toLocaleString("es-CO")}
+          </strong>
+
+          <span>
+            Stock: ${producto.stock}
+          </span>
+
+        </div>
+      `;
+
+      lista.appendChild(tarjeta);
+    });
+
+  } catch (error) {
+    console.error(
+      "Error al cargar productos del vendedor:",
+      error
+    );
+
+    lista.innerHTML = `
+      <p>
+        Error de conexión con el servidor.
+      </p>
+    `;
+  }
 }
